@@ -66,13 +66,79 @@
 
 ## ⌛ 制限事項
 
-- 1ルームのみ (MVP)
 - 画像はbase64でWebSocket上で送信、保存はしない
 - 認証なしで自由参加
 
-## ▶ 次のステップ
 
-- ソケット通信のロジック実装
-- 描画キャンバスのUI
-- 答えの判定ロジック
-- スコア加算 & ラウンド換り
+## 🛰 WebSocketメッセージ設計
+
+- WebSocketでは「どのモデルが更新されたか」だけを通知し、クライアントはREST APIで最新データを取得して画面を更新する方式とする。
+- CQRS/イベント駆動アーキテクチャに適したシンプルな設計。
+
+### メッセージ構造
+```json
+{
+  "type": "model_updated",         // 固定値
+  "modelType": "Game",             // 例: "Game", "ChatMessage", "Player"
+  "modelId": "abc123",             // 例: ゲームID、チャットID、プレイヤーID
+  "event": "GameStarted",          // 省略可: 何のイベントで更新されたか
+  "updatedAt": "2024-05-01T12:34:56Z" // 省略可: サーバ時刻
+}
+```
+
+#### 例
+- ゲーム開始: `{"type":"model_updated","modelType":"Game","modelId":"game-xyz","event":"GameStarted"}`
+- チャット追加: `{"type":"model_updated","modelType":"ChatMessage","modelId":"chat-123","event":"ChatMessageSent"}`
+
+### クライアントの流れ
+1. WebSocketで通知を受信
+2. `modelType`と`modelId`をもとにREST APIで最新データを取得
+3. 取得したデータで画面を再描画
+
+## 🧪 テストポリシ
+
+### テストレベル
+- **ユニットテスト（UT）**  
+  ドメイン層・サービス層のメソッド単位でテスト。  
+  モック/スタブを活用し、外部依存を排除して高速に検証。
+
+- **統合テスト（IT）**  
+  SpringBootのAPIエンドポイントやサービス単位で、DynamoDBやWebSocketなど主要な外部サービスとの連携を含めてテスト。  
+  LocalStackを利用し、AWSリソースのモック環境で実施。
+
+- **E2Eテスト（E2E）**  
+  フロントエンドとバックエンドを通したシナリオテスト。  
+  Playwrightを利用し、Docker ComposeでLocalStack＋SpringBootアプリ＋フロントエンド＋Playwrightを一括起動し、実際のユーザー操作を自動化。
+
+### テスト環境
+- **LocalStack**  
+  DynamoDB, API Gateway, Lambda, S3 などAWSサービスをローカルで再現し、CI/CDやローカル開発で本番に近い動作検証を可能にする。
+
+- **Docker/Docker Compose**  
+  SpringBootアプリケーション、LocalStack、フロントエンド、Playwrightテストランナーをコンテナで一括起動。  
+  開発者全員が同一環境でテスト・開発可能。
+
+### 実施方針
+- すべてのPRでUT/ITを自動実行（CI/CD連携）
+- E2Eは主要なシナリオをPlaywrightで自動実行
+- テストデータはDocker起動時に自動投入
+- テスト失敗時は原因を明確にログ出力
+
+### 利用技術
+- バックエンド: **Java (SpringBoot)**
+- UT/IT: JUnit, Mockito など
+- E2E: **Playwright**
+- インフラ: LocalStack, Docker, Docker Compose
+
+---
+
+## 🚢 コンテナ・Lambda対応方針
+
+- **アプリケーション層（Service/Controller/Domain）は、コンテナ版もLambda版も同じコードを利用する。**
+- SpringBootアプリは、
+  - **コンテナ（Docker）用の実行ファイル**
+  - **AWS Lambda（Javaランタイム）用の実行ファイル**
+  の両方をビルド可能とする。
+- 将来的な運用形態の切り替え（ECS/Fargate, Lambda, EKS等）にも柔軟に対応できる構成とする。
+
+---
