@@ -1,95 +1,440 @@
-```mermaid
-graph LR
-    %% アクター
-    Player((プレイヤー))
-    System((システム))
-    
-    %% コマンド
-    CreateRoom[部屋作成]
-    JoinRoom[部屋参加]
-    StartGame[ゲーム開始]
-    SubmitDrawing[絵を提出]
-    SubmitGuess[回答を提出]
-    SendChat[チャット送信]
-    
-    %% イベント
-    RoomCreated[部屋が作成された]
-    PlayerJoined[プレイヤーが参加した]
-    GameStarted[ゲームが開始された]
-    DrawingSubmitted[絵が提出された]
-    GuessSubmitted[回答が提出された]
-    ChatSent[チャットが送信された]
-    RoundEnded[ラウンドが終了した]
-    GameEnded[ゲームが終了した]
-    
-    %% ポリシー
-    CheckMinPlayers{最小プレイヤー数チェック}
-    ValidateAnswer{回答の検証}
-    CalculateScore{スコア計算}
-    
-    %% アクターとコマンドの関係
-    Player --> CreateRoom
-    Player --> JoinRoom
-    Player --> StartGame
-    Player --> SubmitDrawing
-    Player --> SubmitGuess
-    Player --> SendChat
-    
-    %% コマンドとイベントの関係
-    CreateRoom --> RoomCreated
-    JoinRoom --> PlayerJoined
-    StartGame --> GameStarted
-    SubmitDrawing --> DrawingSubmitted
-    SubmitGuess --> GuessSubmitted
-    SendChat --> ChatSent
-    
-    %% イベントとポリシーの関係
-    PlayerJoined --> CheckMinPlayers
-    GuessSubmitted --> ValidateAnswer
-    ValidateAnswer --> CalculateScore
-    
-    %% ポリシーとイベントの関係
-    CheckMinPlayers --> GameStarted
-    CalculateScore --> RoundEnded
-    RoundEnded --> GameEnded
-    
-    %% スタイル設定
-    classDef actor fill:#f9f,stroke:#333,stroke-width:2px
-    classDef command fill:#bbf,stroke:#333,stroke-width:2px
-    classDef event fill:#bfb,stroke:#333,stroke-width:2px
-    classDef policy fill:#fbb,stroke:#333,stroke-width:2px
-    
-    class Player,System actor
-    class CreateRoom,JoinRoom,StartGame,SubmitDrawing,SubmitGuess,SendChat command
-    class RoomCreated,PlayerJoined,GameStarted,DrawingSubmitted,GuessSubmitted,ChatSent,RoundEnded,GameEnded event
-    class CheckMinPlayers,ValidateAnswer,CalculateScore policy
+# 📚 イベントストーミングのルールと構成図
+
+## 🎯 概要
+
+イベントストーミングは、業務の流れを「起きたこと（イベント）」中心に整理し、ドメイン知識・システム構成・外部とのやりとりを俯瞰するワークショップ手法です。
+
+---
+
+## 🟧 使用するカードの種類と意味
+
+| 色       | 名前             | 役割の説明                             |
+|----------|------------------|----------------------------------------|
+| 👤 灰     | アクター         | システムを使う人や外部システム         |
+| 🟦 青     | コマンド         | アクターからの操作要求                 |
+| 🟨 黄     | 集約             | 一貫性を保った状態変化の単位           |
+| 🟧 橙     | ドメインイベント | ビジネス上「起きたこと」の記録         |
+| 🟪 紫     | ポリシー         | イベント発生時に追加で取るべきアクション |
+| 🌐 緑     | 外部サービス     | 外部システムとの連携先                 |
+| 📘 緑薄   | Readモデル       | クエリ応答用のビュー（投影）           |
+
+---
+
+## ✅ イベントストーミングの基本ルール
+
+### 1. **アクターはすべての出発点**
+- ユーザーまたは外部システムが何かを「やりたい」と思った瞬間からストーリーが始まる
+
+### 2. **コマンドは意図を表す**
+- 「やってほしいこと」（例：注文を確定する、面接を予約する）
+- 原則1つのコマンドは1つの集約に責務を持つ
+
+### 3. **集約は状態変更の境界**
+- 一貫性を保ちながら内部状態を変える
+- ドメインイベントを発行して「何が起きたか」を外に知らせる
+
+### 4. **ドメインイベントは不可逆の事実**
+- 「○○された」「××が完了した」など過去形で表現される
+
+### 5. **外部サービスへの呼び出しは副作用**
+- コマンドが契機で外部呼び出しが発生し、成功時にイベントが発行される
+
+### 6. **ポリシーはイベントに対するルール的な反応**
+- ドメインイベントに反応して、新たなコマンドや外部連携を発生させる
+
+### 7. **Readモデルはイベントを投影した表示用ビュー**
+- ドメインイベントに応じて更新され、ユーザーにフィードバックを返す
+
+---
+
+## 🔁 よくある流れパターン
+
+### 🌀 状態変更系
+
+```text
+👤 アクター
+↓
+🟦 コマンド
+↓
+🟨 集約が処理・状態変更
+↓
+🟧 ドメインイベント
+↓
+📘 Readモデルに反映
+↓
+👤 アクターが結果を確認
 ```
+## 🌐 外部呼び出しを含むパターン
+
+```text
+👤 アクター
+↓
+🟦 コマンド
+↓
+🌐 外部サービスに連携
+↓
+🟧 外部完了イベント
+↓
+🟪 ポリシーが反応
+↓
+🟦 別のコマンド発行
+↓
+🟨 別の集約が状態変更
+↓
+🟧 ドメインイベント
+↓
+📘 Readモデル更新 → 👤 に表示
+```
+
+## 📊 全体構成図（Mermaid）
+
+```mermaid
+flowchart TD
+    Z[👤 アクター<br>ユーザーや外部システム]
+
+    Z --> A[🟦 コマンド<br>「～を依頼する」]
+
+    A --> B[🟨 集約<br>状態変更など]
+    B -->|処理結果| C[🟧 ドメインイベント<br>「～された」]
+
+    A -->|外部呼び出し| X[🌐 外部サービス]
+    X -->|応答| Y[🟧 ドメインイベント<br>「外部完了」]
+
+    C -->|反応| D[🟪 ポリシー]
+    Y -->|反応| D
+    D --> E[🟦 別のコマンド]
+    E --> F[🟨 別の集約]
+    F -->|結果| G[🟧 ドメインイベント]
+
+    C --> R[📘 Readモデル<br>投影されたビュー]
+    Y --> R
+    G --> R
+
+    R --> Z
+
+    %% スタイル
+    style Z fill:#f0f0f0,stroke:#999
+    style A fill:#cce5ff,stroke:#007acc
+    style E fill:#cce5ff,stroke:#007acc
+    style B fill:#fff3cd,stroke:#ffcc00
+    style F fill:#fff3cd,stroke:#ffcc00
+    style C fill:#ffe0b2,stroke:#ff9800
+    style G fill:#ffe0b2,stroke:#ff9800
+    style Y fill:#ffe0b2,stroke:#ff9800
+    style D fill:#e1bee7,stroke:#9c27b0
+    style X fill:#c8e6c9,stroke:#4caf50
+    style R fill:#dcedc8,stroke:#558b2f
+```
+
+✅ ゴール
+ドメイン理解の共通言語を築く
+
+ユースケース・責務・処理の粒度を整理する
+
+開発・ビジネス・UX・インフラが共通認識を持てる土台を作る
+
+
+
+## 要素の説明
+
+### ドメインイベント（Domain Event）
+ビジネスドメインにとって関心のある出来事を記述します。
+一貫性を持たせるため、以下の作成要領で表現します。
+1. 過去形動詞を使う
+2. 専門用語を使用しない
+3. シンプルに言葉を保つ
+
+---
+
+### コマンド（Command）
+ドメインイベントにつながるトリガまたは操作を記述します。
+ユーザーアクション、外部システム、または時間ベースの活動から取得できます。
+ユーザーが起動したコマンドの場合、システム内の特定のコマンドを一覧して呼び出すことができる役割を記述します。
+
+---
+
+### 集約（Aggregate）
+コマンドが処理できるデータを記述します。
+集約は、1つまたは複数のエンティティの整合を保つ境界を定義します。
+集約内の1つのエンティティがルートになります。
+
+---
+
+### 方針（Policy）
+ドメインイベントの結果として実行されるロジックを記述します。
+例：「Xの場合はYを実行」など。
+1つのドメインイベントが複数の方針につながる可能性があります。
+
+---
+
+### 外部システム（External System）
+ドメインの対話が必要なドメインの外側にある管理対象外のソフトウェア、あるいは組織体などを記述します。
+（外部のクラウドサービス、サードパーティのアグリゲーション、ワークショップに参加している他部門、外部組織など）
+
+---
+
+### 読み取りモデル（Read Model）
+何らかのアクションを実行するために必要なデータを記述します。
+集約とは別のもので、画面上に表示する必要があるものなどです。
+例：意思決定を行うためにユーザー画面に表示されるデータ。
+
+---
+
+### 懸念事項（Issue）
+参加者からの説明が必要な懸念事項を記述します。
+例：
+- 完全に理解していない人がいる
+- 意図と異なる意思決定をする人がいる
+- 与えられたステップについて警告する人がいる
+- 参加者の終わりのない議論が続く
+など
+
+---
+
 
 # イベントストーミング図の説明
 
-## アクター
-- プレイヤー: ゲームの参加者
-- システム: ゲームの進行を管理するシステム
+## ユースケース別の説明
 
-## コマンド
+### 1. ルーム作成
+- **アクター**: プレイヤー
+- **コマンド**: 部屋作成
+- **イベント**: 部屋が作成された
+
+### 2. ルーム参加
+- **アクター**: プレイヤー
+- **コマンド**: 部屋参加
+- **イベント**: プレイヤーが参加した
+- **ポリシー**: 最小プレイヤー数チェック
+
+### 3. ゲーム開始
+- **アクター**: プレイヤー
+- **コマンド**: ゲーム開始、役割割り当て
+- **イベント**: ゲームが開始された、役割が割り当てられた
+
+### 4. 出題者
+- **アクター**: 出題者
+- **コマンド**: 題材を決定、描画開始、描画更新
+- **イベント**: 題材が提出された、描画中、描画が更新された、制限時間超過、絵が提出された
+
+### 5. 回答者
+- **アクター**: 回答者
+- **コマンド**: 描画を表示、回答を提出
+- **イベント**: 描画が表示された、回答が提出された、正解、不正解、ラウンドが終了した、ゲームが終了した
+- **ポリシー**: 回答の検証、スコア計算
+
+### 6. チャット
+```mermaid
+flowchart TD
+    Actor6[アクター<br>プレイヤー]
+    A1[🟦 チャット送信を依頼する] -->|トリガー| B1[🟨 チャットメッセージ集約]
+    B1 -->|処理結果| C1[🟧 メッセージが更新された]
+    C1 -->|事後反応| V1[🟦 チャットビューを更新]
+    Actor6 --> A1
+
+    style Actor6 fill:#f0f0f0,stroke:#999
+    style A1 fill:#cce5ff,stroke:#007acc
+    style B1 fill:#fff3cd,stroke:#ffcc00
+    style C1 fill:#ffe0b2,stroke:#ff9800
+    style V1 fill:#7be0db,stroke:#333
+```
+
+## 要素の説明
+
+### アクター
+- プレイヤー: ゲームの参加者
+- 出題者: 絵を描く役割のプレイヤー
+- 回答者: 絵を当てる役割のプレイヤー
+
+### コマンド
 - 部屋作成: 新しいゲームルームを作成
 - 部屋参加: 既存のルームに参加
 - ゲーム開始: ゲームを開始
-- 絵を提出: お題に基づいて絵を描いて提出
+- 役割割り当て: プレイヤーに出題者と回答者の役割を割り当て
+- 題材を決定: 描く絵の題材をテキストで入力
+- 描画開始: 絵を描き始める
+- 描画更新: 描画内容を更新
+- 描画を表示: 描画中の絵を表示
 - 回答を提出: 描かれた絵に対する回答を提出
 - チャット送信: チャットメッセージを送信
 
-## イベント
+### イベント
 - 部屋が作成された: 新しいゲームルームが作成された
 - プレイヤーが参加した: プレイヤーがルームに参加した
 - ゲームが開始された: ゲームが開始された
-- 絵が提出された: プレイヤーが絵を提出した
+- 役割が割り当てられた: プレイヤーに出題者と回答者の役割が割り当てられた
+- 題材が提出された: 出題者が題材を決定した
+- 描画中: 出題者が絵を描いている状態
+- 描画が更新された: 描画内容が更新された
+- 制限時間超過: 描画の制限時間が終了した
+- 絵が提出された: 出題者が絵の描画を完了した
+- 描画が表示された: 回答者が描画中の絵を表示した
 - 回答が提出された: プレイヤーが回答を提出した
+- 正解: 回答者が正解を当てた
+- 不正解: 回答者の回答が不正解だった
 - チャットが送信された: チャットメッセージが送信された
 - ラウンドが終了した: 1ラウンドが終了した
 - ゲームが終了した: ゲームが終了した
 
-## ポリシー
+### ポリシー
 - 最小プレイヤー数チェック: ゲーム開始に必要な最小プレイヤー数を確認
 - 回答の検証: 提出された回答が正解かどうかを検証
-- スコア計算: プレイヤーのスコアを計算 
+- スコア計算: プレイヤーのスコアを計算（正解した回答者と出題者の両方に加算）
+
+## ユースケース別イベントストーミング図（全体構成図スタイル）
+
+### 1. ルーム作成
+```mermaid
+flowchart TD
+    Actor1[アクター<br>プレイヤー]
+    A1[🟦 部屋作成を依頼する] -->|トリガー| B1[🟨 ゲーム集約（作成）]
+    B1 -->|処理結果| C1[🟧 部屋が作成された]
+    C1 -->|事後反応| V1[🟦 ルーム一覧ビューを更新]
+    Actor1 --> A1
+
+    style Actor1 fill:#f0f0f0,stroke:#999
+    style A1 fill:#cce5ff,stroke:#007acc
+    style V1 fill:#7be0db,stroke:#333
+    style B1 fill:#fff3cd,stroke:#ffcc00
+    style C1 fill:#ffe0b2,stroke:#ff9800
+```
+
+---
+
+### 2. ルーム参加
+```mermaid
+flowchart TD
+    Actor2[アクター<br>プレイヤー]
+    A1[🟦 部屋参加を依頼する] -->|トリガー| B1[🟨 ゲーム集約（参加）]
+    B1 -->|処理結果| C1[🟧 プレイヤーが参加した]
+    C1 -->|事後反応| V1[🟦 ルーム一覧ビューを更新]
+    Actor2 --> A1
+
+    style Actor2 fill:#f0f0f0,stroke:#999
+    style A1 fill:#cce5ff,stroke:#007acc
+    style V1 fill:#7be0db,stroke:#333
+    style B1 fill:#fff3cd,stroke:#ffcc00
+    style C1 fill:#ffe0b2,stroke:#ff9800
+```
+
+---
+
+### 3. ゲーム開始
+```mermaid
+flowchart TD
+    Actor3[アクター<br>プレイヤー]
+    A1[🟦 ゲーム開始を依頼する] -->|トリガー| B1[🟨 ゲーム集約]
+    B1 -->|処理結果| C1[🟧 ゲームが開始された]
+    C1 -->|事後反応| V1[🟦 ゲームビューを更新]
+    C1 -->|事後反応| V2[🟦 出題者ビューを更新]
+    C1 -->|事後反応| V3[🟦 回答者ビューを更新]
+    Actor3 --> A1
+
+    style Actor3 fill:#f0f0f0,stroke:#999
+    style A1 fill:#cce5ff,stroke:#007acc
+    style B1 fill:#fff3cd,stroke:#ffcc00
+    style C1 fill:#ffe0b2,stroke:#ff9800
+    style V1 fill:#7be0db,stroke:#333
+    style V2 fill:#7be0db,stroke:#333
+    style V3 fill:#7be0db,stroke:#333
+```
+
+---
+
+### 4. 出題
+```mermaid
+flowchart TD
+    Actor4a[アクター<br>出題者]
+    A1[🟦 題材決定を依頼する] -->|トリガー| B1[🟨 ゲーム集約（Turn更新）]
+    B1 -->|処理結果| C1[🟧 題材が決定された]
+    C1 -->|事後反応| V1[🟦 ゲームビューを更新]
+    Actor4a --> A1
+
+    style Actor4a fill:#f0f0f0,stroke:#999
+    style A1 fill:#cce5ff,stroke:#007acc
+    style B1 fill:#fff3cd,stroke:#ffcc00
+    style C1 fill:#ffe0b2,stroke:#ff9800
+    style V1 fill:#7be0db,stroke:#333
+```
+
+---
+
+### 4-1. 描画開始
+```mermaid
+flowchart TD
+    Actor4b[アクター<br>出題者]
+    A2[🟦 描画する] -->|トリガー| B2[🟨 描画集約（開始）]
+    B2 -->|処理結果| C2[🟧 描画中になった]
+    C2 -->|事後反応| V2[🟦 出題者ビューを更新]
+    C2 -->|事後反応| I1[懸念: 通信遅延で描画がずれる]
+    Actor4b --> A2
+
+    style Actor4b fill:#f0f0f0,stroke:#999
+    style A2 fill:#cce5ff,stroke:#007acc
+    style B2 fill:#fff3cd,stroke:#ffcc00
+    style C2 fill:#ffe0b2,stroke:#ff9800
+    style V2 fill:#7be0db,stroke:#333
+    style I1 fill:#f7cac9,stroke:#333
+```
+
+---
+
+### 4-2. 時間経過によるターン終了
+```mermaid
+flowchart TD
+    Actor4c[アクター<br>出題者]
+    A3[🟦 時間経過を通知する] -->|トリガー| B3[🟨 ゲーム集約]
+    B3 -->|処理結果| C3[🟧 ターンが終了した]
+    C3 -->|事後反応| V3[🟦 ゲームビューを更新]
+    Actor4c --> A3
+
+    style Actor4c fill:#f0f0f0,stroke:#999
+    style A3 fill:#cce5ff,stroke:#007acc
+    style B3 fill:#fff3cd,stroke:#ffcc00
+    style C3 fill:#ffe0b2,stroke:#ff9800
+    style V3 fill:#7be0db,stroke:#333
+```
+
+---
+
+### 5. 回答
+```mermaid
+flowchart TD
+    Actor5[アクター<br>回答者]
+    A1[🟦 回答を入力する] -->|トリガー| B1[🟨 ゲーム集約]
+    B1 -->|処理結果| C1[🟧 ターンが終了した]
+    C1 -->|条件に応じて反応| D1[🟪 ゲーム終了判定ルール]
+    D1 -->|発行| A2[🟦 ゲーム終了を依頼する]
+    A2 -->|トリガー| B2[🟨 ゲーム集約（終了）]
+    B2 -->|処理結果| C2[🟧 ゲームが終了した]
+    C1 -->|事後反応| V1[🟦 スコアボードビューを更新]
+    Actor5 --> A1
+
+    style Actor5 fill:#f0f0f0,stroke:#999
+    style A1 fill:#cce5ff,stroke:#007acc
+    style A2 fill:#cce5ff,stroke:#007acc
+    style V1 fill:#7be0db,stroke:#333
+    style B1 fill:#fff3cd,stroke:#ffcc00
+    style B2 fill:#fff3cd,stroke:#ffcc00
+    style C1 fill:#ffe0b2,stroke:#ff9800
+    style C2 fill:#ffe0b2,stroke:#ff9800
+    style D1 fill:#e1bee7,stroke:#9c27b0
+```
+
+---
+
+### 6. チャット
+```mermaid
+flowchart TD
+    Actor6[アクター<br>プレイヤー]
+    A1[🟦 チャット送信を依頼する] -->|トリガー| B1[🟨 チャットメッセージ集約]
+    B1 -->|処理結果| C1[🟧 メッセージが更新された]
+    C1 -->|事後反応| V1[🟦 チャットビューを更新]
+    Actor6 --> A1
+
+    style Actor6 fill:#f0f0f0,stroke:#999
+    style A1 fill:#cce5ff,stroke:#007acc
+    style B1 fill:#fff3cd,stroke:#ffcc00
+    style C1 fill:#ffe0b2,stroke:#ff9800
+    style V1 fill:#7be0db,stroke:#333
+``` 

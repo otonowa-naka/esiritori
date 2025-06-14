@@ -4,12 +4,13 @@
 
 ```mermaid
 classDiagram
-    %% 集約ルート間の関係
     class Game {
         <<Aggregate Root>>
         +GameId id
         +GameStatus status
         +GameSettings settings
+        +Round currentRound
+        +List<Player> players
         +createGame()
         +startGame()
         +endGame()
@@ -17,41 +18,35 @@ classDiagram
     }
 
     class Round {
-        <<Aggregate Root>>
         +RoundId id
-        +GameId gameId
         +int roundNumber
+        +Turn currentTurn
+        +RoundStatus status
         +startRound()
         +endRound()
         +nextTurn()
     }
 
     class Turn {
-        <<Aggregate Root>>
         +TurnId id
-        +RoundId roundId
         +PlayerId drawerId
+        +Answer answer
+        +TurnStatus status
+        +TimeLimit timeLimit
         +startTurn()
         +endTurn()
-    }
-
-    class Room {
-        <<Aggregate Root>>
-        +RoomId id
-        +RoomStatus status
-        +GameId gameId
-        +createRoom()
-        +joinGame()
-        +leaveGame()
+        +validateAnswer()
     }
 
     class Player {
-        <<Aggregate Root>>
         +PlayerId id
         +PlayerName name
         +Score score
-        +joinRoom(roomId)
-        +leaveRoom()
+        +PlayerStatus status
+        +joinGame()
+        +leaveGame()
+        +setReady()
+        +updateScore()
     }
 
     class Drawing {
@@ -59,76 +54,50 @@ classDiagram
         +DrawingId id
         +TurnId turnId
         +PlayerId drawerId
+        +ImageData imageData
+        +TimeSpent timeSpent
+        +DrawingStatus status
         +saveDrawing()
     }
 
-    class Chat {
+    class ChatMessage {
         <<Aggregate Root>>
-        +ChatId id
+        +ChatMessageId id
         +GameId gameId
         +PlayerId playerId
+        +Message message
+        +ChatType type
+        +Timestamp createdAt
         +sendMessage()
     }
 
-    %% ドメインサービス
-    class GameProgressService {
-        <<Domain Service>>
-        +startGame()
-        +endGame()
-        +nextRound()
-        +nextTurn()
+    class RoundHistory {
+        <<Aggregate Root>>
+        +GameId gameId
+        +List<Round> rounds
+        +addRound()
+        +getRounds()
     }
 
-    class ScoreCalculationService {
-        <<Domain Service>>
-        +calculateScore()
-        +updatePlayerScore()
-        +calculateTimeBonus()
+    class TurnHistory {
+        <<Aggregate Root>>
+        +RoundId roundId
+        +List<Turn> turns
+        +addTurn()
+        +getTurns()
     }
 
-    class AnswerValidationService {
-        <<Domain Service>>
-        +validateAnswer()
-        +checkCorrectness()
-        +processCorrectAnswer()
-    }
-
-    class PlayerManagementService {
-        <<Domain Service>>
-        +joinGame()
-        +leaveGame()
-        +setPlayerReady()
-        +assignDrawer()
-    }
-
-    class ChatManagementService {
-        <<Domain Service>>
-        +sendMessage()
-        +broadcastSystemMessage()
-        +notifyCorrectAnswer()
-    }
-
-    %% 集約間の関係
-    Game "1" -- "*" Round : contains
-    Round "1" -- "*" Turn : contains
-    Room "1" -- "1" Game : joins
+    %% 関係
+    Game "1" -- "1" Round : current
     Game "1" -- "*" Player : has
-    Game "1" -- "*" Chat : has
-    Turn "1" -- "*" Drawing : has
-
-    %% ドメインサービスとの関係
-    GameProgressService ..> Game : uses
-    GameProgressService ..> Round : uses
-    GameProgressService ..> Turn : uses
-    ScoreCalculationService ..> Player : uses
-    ScoreCalculationService ..> Turn : uses
-    AnswerValidationService ..> Turn : uses
-    AnswerValidationService ..> Player : uses
-    PlayerManagementService ..> Game : uses
-    PlayerManagementService ..> Player : uses
-    ChatManagementService ..> Game : uses
-    ChatManagementService ..> Chat : uses
-    ChatManagementService ..> Player : uses
+    Game "1" -- "*" Drawing : has
+    Game "1" -- "*" ChatMessage : has
+    Game "1" -- "1" GameSettings : has
+    Game "1" -- "1" RoundHistory : keeps
+    Round "1" -- "1" Turn : current
+    Round "1" -- "1" TurnHistory : keeps
+    RoundHistory "1" -- "*" Round : has
+    TurnHistory "1" -- "*" Turn : has
 ```
 
 ## 2. 集約の詳細
@@ -142,6 +111,7 @@ classDiagram
         +GameStatus status
         +GameSettings settings
         +Round currentRound
+        +List<Player> players
         +createGame()
         +startGame()
         +endGame()
@@ -156,25 +126,6 @@ classDiagram
         +validate()
     }
 
-    class TimeLimit {
-        <<Value Object>>
-        +int seconds
-        +validate()
-    }
-
-    class RoundCount {
-        <<Value Object>>
-        +int value
-        +validate()
-    }
-
-    class PlayerCount {
-        <<Value Object>>
-        +int min
-        +int max
-        +validate()
-    }
-
     class GameStatus {
         <<Enumeration>>
         WAITING
@@ -182,33 +133,26 @@ classDiagram
         FINISHED
     }
 
+    Game "1" -- "1" Round : current
+    Game "1" -- "*" Player : has
     Game "1" -- "1" GameSettings : has
-    GameSettings -- TimeLimit : has
-    GameSettings -- RoundCount : has
-    GameSettings -- PlayerCount : has
 ```
 
 #### Game集約の説明
 - **Game(ゲーム)**
   - ゲーム全体を管理する集約ルート
-  - ゲーム設定と進行状態を管理
-  - ラウンドの進行を制御
-  - プレイヤーとチャットの管理
-
-- **GameSettings(ゲーム設定)**
-  - 制限時間、ラウンド数、プレイヤー数の設定
-  - 設定値のバリデーション
+  - 現在のラウンド（currentRound）を持ち、進行状態を一元管理
+  - 履歴はRoundHistory集約で管理
+  - プレイヤー・設定も内包
 
 ### Round集約
 ```mermaid
 classDiagram
     class Round {
-        <<Aggregate Root>>
         +RoundId id
-        +GameId gameId
         +int roundNumber
-        +RoundStatus status
         +Turn currentTurn
+        +RoundStatus status
         +startRound()
         +endRound()
         +nextTurn()
@@ -220,21 +164,22 @@ classDiagram
         IN_PROGRESS
         COMPLETED
     }
+
+    Round "1" -- "1" Turn : current
+    Round "1" -- "1" TurnHistory : keeps
 ```
 
 #### Round集約の説明
 - **Round(ラウンド)**
-  - 1回のしりとりを管理する集約ルート
-  - ターンの進行を管理
-  - ラウンドの状態を制御
+  - 現在のターン（currentTurn）を持つ
+  - 履歴はTurnHistory集約で管理
+  - 状態遷移・進行を管理
 
 ### Turn集約
 ```mermaid
 classDiagram
     class Turn {
-        <<Aggregate Root>>
         +TurnId id
-        +RoundId roundId
         +PlayerId drawerId
         +Answer answer
         +TurnStatus status
@@ -242,12 +187,6 @@ classDiagram
         +startTurn()
         +endTurn()
         +validateAnswer()
-    }
-
-    class Answer {
-        <<Value Object>>
-        +String value
-        +validate()
     }
 
     class TurnStatus {
@@ -261,35 +200,28 @@ classDiagram
 
 #### Turn集約の説明
 - **Turn(ターン)**
-  - 1回の描画と回答を管理する集約ルート
-  - 描画を管理
-  - 正解判定を制御
+  - 1回の描画と回答を管理する集約
+  - 出題者・お題・状態・制限時間などを持つ
 
-### Room集約
+### ChatMessage集約
 ```mermaid
 classDiagram
-    class Room {
+    class ChatMessage {
         <<Aggregate Root>>
-        +RoomId id
-        +RoomStatus status
+        +ChatMessageId id
         +GameId gameId
-        +createRoom()
-        +joinGame()
-        +leaveGame()
-    }
-
-    class RoomStatus {
-        <<Enumeration>>
-        WAITING
-        PLAYING
-        FINISHED
+        +PlayerId playerId
+        +Message message
+        +ChatType type
+        +Timestamp createdAt
+        +sendMessage()
     }
 ```
 
-#### Room集約の説明
-- **Room(ルーム)**
-  - プレイヤーの集まりを管理する集約ルート
-  - ゲームへの参加を管理
+#### ChatMessage集約の説明
+- **ChatMessage(チャットメッセージ)**
+  - 1件のチャット発言を管理する集約
+  - ゲームID・プレイヤーID・内容・種別・タイムスタンプを持つ
 
 ### Player集約
 ```mermaid
@@ -300,8 +232,8 @@ classDiagram
         +PlayerName name
         +Score score
         +PlayerStatus status
-        +joinRoom(roomId)
-        +leaveRoom()
+        +joinGame()
+        +leaveGame()
         +setReady()
         +updateScore()
     }
@@ -371,40 +303,6 @@ classDiagram
 - **Drawing(描画)**
   - 描画情報を管理する独立した集約ルート
   - 描画データと状態を管理
-
-### Chat集約
-```mermaid
-classDiagram
-    class Chat {
-        <<Aggregate Root>>
-        +ChatId id
-        +GameId gameId
-        +PlayerId playerId
-        +Message message
-        +ChatType type
-        +Timestamp createdAt
-        +sendMessage()
-    }
-
-    class Message {
-        <<Value Object>>
-        +String value
-        +validate()
-    }
-
-    class ChatType {
-        <<Enumeration>>
-        NORMAL
-        CORRECT_ANSWER
-        SYSTEM
-    }
-```
-
-#### Chat集約の説明
-- **Chat(チャット)**
-  - チャットメッセージを管理する独立した集約ルート
-  - メッセージタイプを管理
-  - ゲーム全体のコミュニケーションを管理
 
 ## 3. ドメインサービスの説明
 
