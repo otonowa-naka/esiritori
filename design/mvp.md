@@ -55,48 +55,6 @@
 | 認証 | ニックネームのみ (認証サービス不要) |
 | デプロイ | AWSの無償プラン内 |
 
-## 🔹 データベース設計
-
-### DynamoDB スキーマ構成
-
-#### テーブル: Rooms
-```typescript
-PK: "ROOM#<roomId>"
-SK: "META"
-{
-  roomId: string
-  players: string[] // playerId list
-  round: number
-  drawerId: string
-  answer: string
-  startedAt: timestamp
-}
-```
-
-#### テーブル: Players
-```typescript
-PK: "ROOM#<roomId>"
-SK: "PLAYER#<playerId>"
-{
-  playerId: string
-  name: string
-  score: number
-}
-```
-
-#### テーブル: Chats
-```typescript
-PK: "ROOM#<roomId>"
-SK: "CHAT#<timestamp>"
-{
-  playerId: string
-  name: string
-  message: string
-  isCorrect: boolean
-  timestamp: number
-}
-```
-
 ## 🚀 AWS インフラ構成
 
 - API Gateway (WebSocket API)

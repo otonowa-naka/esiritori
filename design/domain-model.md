@@ -11,10 +11,28 @@ classDiagram
         +GameSettings settings
         +Round currentRound
         +List<Player> players
+        +List<ScoreRecord> scoreRecords
         +createGame()
         +startGame()
         +endGame()
         +nextRound()
+        +addScoreRecord()
+    }
+
+    class ScoreRecord {
+        <<Value Object>>
+        +PlayerId playerId
+        +int roundNumber
+        +int turnNumber
+        +int points
+        +ScoreReason reason
+        +Timestamp timestamp
+    }
+
+    class ScoreReason {
+        <<Enumeration>>
+        CORRECT_ANSWER
+        DRAWER_PENALTY
     }
 
     class Round {
@@ -41,12 +59,10 @@ classDiagram
     class Player {
         +PlayerId id
         +PlayerName name
-        +Score score
         +PlayerStatus status
         +joinGame()
         +leaveGame()
         +setReady()
-        +updateScore()
     }
 
     class Drawing {
@@ -94,6 +110,7 @@ classDiagram
     Game "1" -- "*" ChatMessage : has
     Game "1" -- "1" GameSettings : has
     Game "1" -- "1" RoundHistory : keeps
+    Game "1" -- "*" ScoreRecord : keeps
     Round "1" -- "1" Turn : current
     Round "1" -- "1" TurnHistory : keeps
     RoundHistory "1" -- "*" Round : has
@@ -112,10 +129,12 @@ classDiagram
         +GameSettings settings
         +Round currentRound
         +List<Player> players
+        +List<ScoreRecord> scoreRecords
         +createGame()
         +startGame()
         +endGame()
         +nextRound()
+        +addScoreRecord()
     }
 
     class GameSettings {
@@ -133,15 +152,33 @@ classDiagram
         FINISHED
     }
 
+    class ScoreRecord {
+        <<Value Object>>
+        +PlayerId playerId
+        +int roundNumber
+        +int turnNumber
+        +int points
+        +ScoreReason reason
+        +Timestamp timestamp
+    }
+
+    class ScoreReason {
+        <<Enumeration>>
+        CORRECT_ANSWER
+        DRAWER_PENALTY
+    }
+
     Game "1" -- "1" Round : current
     Game "1" -- "*" Player : has
     Game "1" -- "1" GameSettings : has
+    Game "1" -- "*" ScoreRecord : keeps
 ```
 
 #### Game集約の説明
 - **Game(ゲーム)**
   - ゲーム全体を管理する集約ルート
   - 現在のラウンド（currentRound）を持ち、進行状態を一元管理
+  - スコアはscoreRecords（履歴）として管理し、どのターンで誰が何ポイント得たか記録
   - 履歴はRoundHistory集約で管理
   - プレイヤー・設定も内包
 
@@ -230,25 +267,16 @@ classDiagram
         <<Aggregate Root>>
         +PlayerId id
         +PlayerName name
-        +Score score
         +PlayerStatus status
         +joinGame()
         +leaveGame()
         +setReady()
-        +updateScore()
     }
 
     class PlayerName {
         <<Value Object>>
         +String value
         +validate()
-    }
-
-    class Score {
-        <<Value Object>>
-        +int value
-        +add()
-        +subtract()
     }
 
     class PlayerStatus {
@@ -263,7 +291,8 @@ classDiagram
 #### Player集約の説明
 - **Player(プレイヤー)**
   - プレイヤー情報を管理する独立した集約ルート
-  - スコア、状態、名前などの属性を持つ
+  - スコアは持たず、ゲームのスコア履歴で集計
+  - 状態、名前などの属性を持つ
   - ゲームに直接参加
 
 ### Drawing集約
