@@ -125,7 +125,7 @@
 - テスト失敗時は原因を明確にログ出力
 
 ### 利用技術
-- バックエンド: **Java (SpringBoot)**
+- バックエンド: **C#C#**
 - UT/IT: JUnit, Mockito など
 - E2E: **Playwright**
 - インフラ: LocalStack, Docker, Docker Compose
