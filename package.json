@@ -1,0 +1,17 @@
+{
+  "name": "esiritori",
+  "version": "1.0.0",
+  "description": "お絵描き当てゲーム",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "start": "node src/server.js",
+    "test": "node src/server.js --test"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs"
+}
