@@ -19,46 +19,49 @@
 PK: "GAME#<gameId>"
 SK: "META"
 {
-  gameId: string
+  gameId: GameId
   status: 'waiting' | 'playing' | 'finished'
   settings: {
-    timeLimit: number      // 制限時間（秒）
-    roundCount: number     // ラウンド数
+    timeLimit: TimeLimit      // 制限時間（秒）
+    roundCount: RoundNumber   // ラウンド数
+    playerCount: number       // 最大プレイヤー数
   }
-  players: Player[]
   currentRound: {
-    roundNumber: number
-    startedAt: number
-    endedAt: number
+    id: RoundId
+    roundNumber: RoundNumber
     currentTurn: {
-      turnNumber: number
+      id: TurnId
+      turnNumber: TurnNumber
+      drawerId: PlayerId
+      answer: Answer
       status: 'not_started' | 'setting_answer' | 'drawing' | 'finished'
-      drawerId: string
-      answer: string
+      timeLimit: TimeLimit
       startedAt: number
       endedAt: number
     }
+    startedAt: number
+    endedAt: number
   }
-  scores: Score[]  // ゲーム全体のスコア履歴
+  players: Player[]
+  scoreHistories: ScoreHistory[]
   startedAt: number
   updatedAt: number
 }
 
 // Player型
 {
-  playerId: string
-  name: string
-  isReady: boolean
-  isDrawer: boolean
+  id: PlayerId
+  name: PlayerName
+  status: 'ready' | 'not_ready'
 }
 
-// Score型
+// ScoreHistory型
 {
-  playerId: string
-  roundNumber: number
-  turnNumber: number
-  points: number
-  reason: 'correct_answer' | 'drawer_penalty'  // ポイント獲得理由
+  playerId: PlayerId
+  roundNumber: RoundNumber
+  turnNumber: TurnNumber
+  points: Points
+  reason: string
   timestamp: number
 }
 ```
@@ -72,29 +75,45 @@ SK: "META"
 PK: "GAME#<gameId>"
 SK: "ROUND#<roundNumber>"
 {
-  roundNumber: number
-  turns: TurnHistory[]
+  id: RoundId
+  gameId: GameId
+  roundId: RoundId
+  roundNumber: RoundNumber
+  currentTurn: {
+    id: TurnId
+    turnNumber: TurnNumber
+    drawerId: PlayerId
+    answer: Answer
+    status: 'not_started' | 'setting_answer' | 'drawing' | 'finished'
+    timeLimit: TimeLimit
+    startedAt: number
+    endedAt: number
+  }
   startedAt: number
   endedAt: number
 }
+```
 
-// TurnHistory型
+---
+
+## TurnHistory テーブル
+- ターンごとの履歴を保存
+
+```typescript
+PK: "ROUND#<roundId>"
+SK: "TURN#<turnNumber>"
 {
-  turnNumber: number
-  drawerId: string
-  answer: string
-  drawings: string[] // base64画像データ等
-  guesses: Guess[]
+  id: TurnId
+  roundId: RoundId
+  turnId: TurnId
+  turnNumber: TurnNumber
+  drawerId: PlayerId
+  answer: Answer
+  status: 'not_started' | 'setting_answer' | 'drawing' | 'finished'
+  timeLimit: TimeLimit
+  correctPlayerIds: PlayerId[]
   startedAt: number
   endedAt: number
-}
-
-// Guess型
-{
-  playerId: string
-  answer: string
-  isCorrect: boolean
-  timestamp: number
 }
 ```
 
@@ -107,19 +126,18 @@ SK: "ROUND#<roundNumber>"
 PK: "GAME#<gameId>"
 SK: "CHAT#<timestamp>"
 {
-  messageId: string
-  playerId: string
-  name: string
-  message: string
-  isCorrect: boolean
-  timestamp: number
+  id: ChatMessageId
+  gameId: GameId
+  playerId: PlayerId
+  message: Message
+  type: 'system' | 'player' | 'guess' | 'correct'
+  createdAt: number
 }
 ```
 
 ---
 
 ## 備考
-- ルーム集約は廃止したため、Roomテーブルは不要
 - プレイヤーはGameアイテム内の配列で管理
 - スコアはゲーム全体の履歴として保持
 - GSI例: プレイヤーIDでの検索用GSI（必要に応じて） 

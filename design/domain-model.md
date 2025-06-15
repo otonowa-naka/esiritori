@@ -11,69 +11,38 @@ classDiagram
         +GameSettings settings
         +Round currentRound
         +List<Player> players
-        +List<ScoreRecord> scoreRecords
+        +List<ScoreHistory> scoreHistories
         +createGame()
         +startGame()
         +endGame()
         +nextRound()
-        +addScoreRecord()
+        +addScoreHistory()
     }
 
-    class ScoreRecord {
-        <<Value Object>>
-        +PlayerId playerId
-        +int roundNumber
-        +int turnNumber
-        +int points
-        +ScoreReason reason
-        +Timestamp timestamp
-    }
-
-    class ScoreReason {
-        <<Enumeration>>
-        CORRECT_ANSWER
-        DRAWER_PENALTY
-    }
-
-    class Round {
+    class RoundHistory {
+        <<Aggregate Root>>
         +RoundId id
-        +int roundNumber
+        +GameId gameId
+        +RoundId roundId
+        +RoundNumber roundNumber
         +Turn currentTurn
-        +RoundStatus status
-        +startRound()
-        +endRound()
-        +nextTurn()
+        +startedAt
+        +endedAt
     }
 
-    class Turn {
+    class TurnHistory {
+        <<Aggregate Root>>
         +TurnId id
+        +RoundId roundHistoryId
+        +TurnId turnId
+        +TurnNumber turnNumber
         +PlayerId drawerId
         +Answer answer
         +TurnStatus status
         +TimeLimit timeLimit
-        +startTurn()
-        +endTurn()
-        +validateAnswer()
-    }
-
-    class Player {
-        +PlayerId id
-        +PlayerName name
-        +PlayerStatus status
-        +joinGame()
-        +leaveGame()
-        +setReady()
-    }
-
-    class Drawing {
-        <<Aggregate Root>>
-        +DrawingId id
-        +TurnId turnId
-        +PlayerId drawerId
-        +ImageData imageData
-        +TimeSpent timeSpent
-        +DrawingStatus status
-        +saveDrawing()
+        +List<PlayerId> correctPlayerIds
+        +startedAt
+        +endedAt
     }
 
     class ChatMessage {
@@ -84,42 +53,20 @@ classDiagram
         +Message message
         +ChatType type
         +Timestamp createdAt
-        +sendMessage()
     }
 
-    class RoundHistory {
-        <<Aggregate Root>>
-        +GameId gameId
-        +List<Round> rounds
-        +addRound()
-        +getRounds()
-    }
-
-    class TurnHistory {
-        <<Aggregate Root>>
-        +RoundId roundId
-        +List<Turn> turns
-        +addTurn()
-        +getTurns()
-    }
-
-    %% 関係
-    Game "1" -- "1" Round : current
-    Game "1" -- "*" Player : has
-    Game "1" -- "*" Drawing : has
-    Game "1" -- "*" ChatMessage : has
-    Game "1" -- "1" GameSettings : has
-    Game "1" -- "1" RoundHistory : keeps
-    Game "1" -- "*" ScoreRecord : keeps
-    Round "1" -- "1" Turn : current
-    Round "1" -- "1" TurnHistory : keeps
-    RoundHistory "1" -- "*" Round : has
-    TurnHistory "1" -- "*" Turn : has
+    Game "1" <-- "*" RoundHistory : references
+    TurnHistory "*" --> "1" RoundHistory : references
+    Game "1" <-- "*" ChatMessage : references
 ```
 
 ## 2. 集約の詳細
 
+---
+
 ### Game集約
+
+#### クラス図（全体まとめ）
 ```mermaid
 classDiagram
     class Game {
@@ -129,118 +76,199 @@ classDiagram
         +GameSettings settings
         +Round currentRound
         +List<Player> players
-        +List<ScoreRecord> scoreRecords
-        +createGame()
-        +startGame()
-        +endGame()
-        +nextRound()
-        +addScoreRecord()
+        +List<ScoreHistory> scoreHistories
     }
-
     class GameSettings {
         <<Value Object>>
         +TimeLimit timeLimit
-        +RoundCount roundCount
-        +PlayerCount playerCount
-        +validate()
+        +RoundNumber roundCount
+        +number playerCount
     }
-
-    class GameStatus {
-        <<Enumeration>>
-        WAITING
-        PLAYING
-        FINISHED
-    }
-
-    class ScoreRecord {
-        <<Value Object>>
-        +PlayerId playerId
-        +int roundNumber
-        +int turnNumber
-        +int points
-        +ScoreReason reason
-        +Timestamp timestamp
-    }
-
-    class ScoreReason {
-        <<Enumeration>>
-        CORRECT_ANSWER
-        DRAWER_PENALTY
-    }
-
-    Game "1" -- "1" Round : current
-    Game "1" -- "*" Player : has
-    Game "1" -- "1" GameSettings : has
-    Game "1" -- "*" ScoreRecord : keeps
-```
-
-#### Game集約の説明
-- **Game(ゲーム)**
-  - ゲーム全体を管理する集約ルート
-  - 現在のラウンド（currentRound）を持ち、進行状態を一元管理
-  - スコアはscoreRecords（履歴）として管理し、どのターンで誰が何ポイント得たか記録
-  - 履歴はRoundHistory集約で管理
-  - プレイヤー・設定も内包
-
-### Round集約
-```mermaid
-classDiagram
     class Round {
+        <<Value Object>>
         +RoundId id
-        +int roundNumber
+        +RoundNumber roundNumber
         +Turn currentTurn
-        +RoundStatus status
-        +startRound()
-        +endRound()
-        +nextTurn()
     }
-
-    class RoundStatus {
-        <<Enumeration>>
-        NOT_STARTED
-        IN_PROGRESS
-        COMPLETED
-    }
-
-    Round "1" -- "1" Turn : current
-    Round "1" -- "1" TurnHistory : keeps
-```
-
-#### Round集約の説明
-- **Round(ラウンド)**
-  - 現在のターン（currentTurn）を持つ
-  - 履歴はTurnHistory集約で管理
-  - 状態遷移・進行を管理
-
-### Turn集約
-```mermaid
-classDiagram
     class Turn {
+        <<Value Object>>
         +TurnId id
+        +TurnNumber turnNumber
         +PlayerId drawerId
         +Answer answer
         +TurnStatus status
         +TimeLimit timeLimit
-        +startTurn()
-        +endTurn()
-        +validateAnswer()
     }
+    class Player {
+        <<Value Object>>
+        +PlayerId id
+        +PlayerName name
+        +PlayerStatus status
+    }
+    class ScoreHistory {
+        <<Value Object>>
+        +PlayerId playerId
+        +RoundNumber roundNumber
+        +TurnNumber turnNumber
+        +Points points
+        +string reason
+        +Timestamp timestamp
+    }
+    Game "1" -- "1" GameSettings : has
+    Game "1" -- "1" Round : current
+    Game "1" -- "*" Player : has
+    Game "1" -- "*" ScoreHistory : keeps
+    Round "1" -- "1" Turn : current
+```
 
-    class TurnStatus {
-        <<Enumeration>>
-        NOT_STARTED
-        DRAWING
-        GUESSING
-        COMPLETED
+#### プロパティ
+| プロパティ名    | 型                | 説明                   | 制約条件 |
+|----------------|-------------------|------------------------|----------|
+| id             | GameId            | ゲームID               |          |
+| status         | GameStatus        | ゲームの状態           |          |
+| settings       | GameSettings      | ゲーム設定             |          |
+| currentRound   | Round             | 現在のラウンド         |          |
+| players        | Player[]          | 参加プレイヤー一覧     |          |
+| scoreHistories | ScoreHistory[]    | スコア履歴             |          |
+
+---
+
+#### Value Object: GameSettings
+
+##### プロパティ
+| プロパティ名   | 型        | 説明             | 制約条件 |
+|---------------|-----------|------------------|----------|
+| timeLimit     | TimeLimit | 制限時間（秒）   |   1-300まで   |
+| roundCount    | RoundNumber| ラウンド数       |   1-10    |
+| playerCount   | number    | 最大プレイヤー数 |    2-10   |
+
+---
+
+#### Value Object: Round
+
+##### プロパティ
+| プロパティ名   | 型         | 説明             | 制約条件 |
+|---------------|------------|------------------|----------|
+| id            | RoundId    | ラウンドID       |          |
+| roundNumber   | RoundNumber| ラウンド番号     |   1-10    |
+| currentTurn   | Turn       | 現在のターン     |   1-10    |
+| startedAt     | ISO8601    | 開始時刻         |          |
+| endedAt       | ISO8601    | 終了時刻         |          |
+
+---
+
+#### Value Object: Turn
+
+##### プロパティ
+| プロパティ名   | 型         | 説明             | 制約条件 |
+|---------------|------------|------------------|----------|
+| id            | TurnId     | ターンID         |          |
+| turnNumber    | TurnNumber | ターン番号       |   1-10    |
+| drawerId      | PlayerId   | 出題者ID         |          |
+| answer        | Answer     | お題             |   ひらがな　1以上50文字以下    |
+| status        | TurnStatus | ターンの状態     |          |
+| timeLimit     | TimeLimit  | 制限時間（秒）   |    1-300まで      |
+| startedAt     | ISO8601    | 開始時刻         |          |
+| endedAt       | ISO8601    | 終了時刻         |          |
+
+---
+
+#### Value Object: Player
+
+##### プロパティ
+| プロパティ名   | 型         | 説明             | 制約条件 |
+|---------------|------------|------------------|----------|
+| id            | PlayerId   | プレイヤーID     |          |
+| name          | PlayerName | プレイヤー名     |   1－10文字まで       |
+| status        | PlayerStatus| プレイヤー状態  |          |
+
+---
+
+#### Value Object: ScoreHistory
+
+##### プロパティ
+| プロパティ名   | 型         | 説明             | 制約条件 |
+|---------------|------------|------------------|----------|
+| playerId      | PlayerId   | プレイヤーID     |          |
+| roundNumber   | RoundNumber| ラウンド番号     |  1-10        |
+| turnNumber    | TurnNumber | ターン番号       |  1-10        |
+| points        | Points     | 獲得ポイント     |   1以上整数       |
+| reason        | string     | スコア理由       |          |
+| timestamp     | ISO8601    | 記録時刻         |          |
+
+---
+
+### RoundHistory集約
+
+#### クラス図
+```mermaid
+classDiagram
+    class RoundHistory {
+        <<Aggregate Root>>
+        +RoundId id
+        +GameId gameId
+        +RoundId roundId
+        +RoundNumber roundNumber
+        +Turn currentTurn
+        +startedAt
+        +endedAt
     }
 ```
 
-#### Turn集約の説明
-- **Turn(ターン)**
-  - 1回の描画と回答を管理する集約
-  - 出題者・お題・状態・制限時間などを持つ
+#### プロパティ
+| プロパティ名   | 型         | 説明             | 制約条件 |
+|---------------|------------|------------------|----------|
+| id            | RoundId    | ラウンド履歴ID   |          |
+| gameId        | GameId     | ゲームID         |          |
+| roundId       | RoundId    | ラウンドID       |          |
+| roundNumber   | RoundNumber| ラウンド番号     |          |
+| currentTurn   | Turn       | 現在のターン     |          |
+| startedAt     | ISO8601    | 開始時刻         |          |
+| endedAt       | ISO8601    | 終了時刻         |          |
+
+---
+
+#### TurnHistory集約
+
+##### クラス図
+```mermaid
+classDiagram
+    class TurnHistory {
+        <<Aggregate Root>>
+        +TurnId id
+        +RoundId roundHistoryId
+        +TurnId turnId
+        +TurnNumber turnNumber
+        +PlayerId drawerId
+        +Answer answer
+        +TurnStatus status
+        +TimeLimit timeLimit
+        +List<PlayerId> correctPlayerIds
+        +startedAt
+        +endedAt
+    }
+```
+
+##### プロパティ
+| プロパティ名      | 型         | 説明             | 制約条件 |
+|------------------|------------|------------------|----------|
+| id               | TurnId     | ターン履歴ID     |          |
+| roundHistoryId   | RoundId    | ラウンド履歴ID   |          |
+| turnId           | TurnId     | ターンID         |          |
+| turnNumber       | TurnNumber | ターン番号       |          |
+| drawerId         | PlayerId   | 出題者ID         |          |
+| answer           | Answer     | お題             |          |
+| status           | TurnStatus | ターンの状態     |          |
+| timeLimit        | TimeLimit  | 制限時間（秒）   |    1-300まで      |
+| correctPlayerIds | PlayerId[] | 正解者IDリスト   |          |
+| startedAt        | ISO8601    | 開始時刻         |          |
+| endedAt          | ISO8601    | 終了時刻         |          |
+
+---
 
 ### ChatMessage集約
+
+#### クラス図
 ```mermaid
 classDiagram
     class ChatMessage {
@@ -251,118 +279,25 @@ classDiagram
         +Message message
         +ChatType type
         +Timestamp createdAt
-        +sendMessage()
     }
 ```
 
-#### ChatMessage集約の説明
-- **ChatMessage(チャットメッセージ)**
-  - 1件のチャット発言を管理する集約
-  - ゲームID・プレイヤーID・内容・種別・タイムスタンプを持つ
+#### プロパティ
+| プロパティ名   | 型         | 説明             | 制約条件 |
+|---------------|------------|------------------|----------|
+| id            | ChatMessageId | チャットID       |          |
+| gameId        | GameId     | ゲームID         |          |
+| playerId      | PlayerId   | プレイヤーID     |          |
+| message       | Message    | メッセージ内容   |          |
+| type          | ChatType   | メッセージ種別   |          |
+| createdAt     | ISO8601    | 送信時刻         |          |
 
-### Player集約
-```mermaid
-classDiagram
-    class Player {
-        <<Aggregate Root>>
-        +PlayerId id
-        +PlayerName name
-        +PlayerStatus status
-        +joinGame()
-        +leaveGame()
-        +setReady()
-    }
-
-    class PlayerName {
-        <<Value Object>>
-        +String value
-        +validate()
-    }
-
-    class PlayerStatus {
-        <<Enumeration>>
-        NOT_READY
-        READY
-        DRAWING
-        GUESSING
-    }
-```
-
-#### Player集約の説明
-- **Player(プレイヤー)**
-  - プレイヤー情報を管理する独立した集約ルート
-  - スコアは持たず、ゲームのスコア履歴で集計
-  - 状態、名前などの属性を持つ
-  - ゲームに直接参加
-
-### Drawing集約
-```mermaid
-classDiagram
-    class Drawing {
-        <<Aggregate Root>>
-        +DrawingId id
-        +TurnId turnId
-        +PlayerId drawerId
-        +ImageData imageData
-        +TimeSpent timeSpent
-        +DrawingStatus status
-        +saveDrawing()
-    }
-
-    class ImageData {
-        <<Value Object>>
-        +String value
-        +validate()
-    }
-
-    class TimeSpent {
-        <<Value Object>>
-        +int seconds
-        +validate()
-    }
-
-    class DrawingStatus {
-        <<Enumeration>>
-        IN_PROGRESS
-        COMPLETED
-    }
-```
-
-#### Drawing集約の説明
-- **Drawing(描画)**
-  - 描画情報を管理する独立した集約ルート
-  - 描画データと状態を管理
-
-## 3. ドメインサービスの説明
-
-### GameProgressService(ゲーム進行サービス)
-- ゲーム全体の進行を管理
-- ラウンドとターンの遷移を制御
-- ゲームの開始と終了を管理
-
-### ScoreCalculationService(スコア計算サービス)
-- プレイヤーのスコア計算
-- 時間ボーナスの計算
-- スコアの更新処理
-
-### AnswerValidationService(回答検証サービス)
-- 回答の正誤判定
-- 正解時の処理
-- 回答の検証ルール管理
-
-### PlayerManagementService(プレイヤー管理サービス)
-- プレイヤーの参加・退出管理
-- 準備状態の管理
-- 描画者の割り当て
-
-### ChatManagementService(チャット管理サービス)
-- チャットメッセージの送信
-- システムメッセージの配信
-- 正解通知の管理
+---
 
 ## 不変条件
 - 各集約は独立して存在可能
 - 集約間の参照はIDのみを使用
 - 集約の整合性は各集約ルートが保証
-- ゲームの進行は Game → Round → Turn の順序で制御
-- プレイヤーとチャットは直接Gameと連携 
+- ゲームの進行は Game（Aggregate Root）→ Round（Value Object）→ Turn（Value Object）の順序で制御
+- ラウンド・ターンの履歴はRoundHistory, TurnHistory（Aggregate Root）で管理
+- プレイヤーとチャットは直接Gameと連携
