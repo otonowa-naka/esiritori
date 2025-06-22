@@ -201,8 +201,7 @@ public sealed class GameCreationTests
         
         // Assert: 検証
         Assert.NotNull(result);
-        Assert.Equal("Waiting", result.Game.Status);
-        Assert.Single(result.Game.Players);
+        Assert.NotEmpty(result.GameId);
     }
     
     [Fact]
@@ -258,6 +257,79 @@ public async Task<ActionResult<CreateGameResponse>> CreateGame([FromBody] Create
     {
         return StatusCode(500, new { error = "内部サーバーエラーが発生しました", details = ex.Message });
     }
+}
+```
+
+### Value Object の実装ルール
+
+#### 1. WithXXX関数の禁止
+
+**❌ 禁止**
+```csharp
+// 個別のWithXXX関数は禁止
+public Turn WithStatus(TurnStatus status)
+public Turn WithAnswer(string answer)
+public Turn WithStartedAt(DateTime startedAt)
+```
+
+**✅ 推奨**
+```csharp
+// ドメインの操作を表現する関数を使用
+public Turn StartSettingAnswer()
+public Turn StartDrawing(DateTime startTime)
+public Turn SetAnswerAndStartDrawing(string answer, DateTime startTime)
+public Turn FinishTurn(DateTime endedAt)
+```
+
+#### 2. 理由
+
+- **可読性**: ドメインの意図が明確に伝わる
+- **保守性**: 同時に変更すべき値が明確
+- **エラー防止**: 不適切な状態変更を防げる
+- **DDD準拠**: ドメインの操作として表現される
+
+#### 3. 実装パターン
+
+```csharp
+public sealed class Turn : IEquatable<Turn>
+{
+    // Private Setを使用して不変性を保証
+    public TurnStatus Status { get; private set; }
+    
+    // Clone関数で新しいインスタンスを作成
+    private Turn Clone()
+    {
+        return new Turn(TurnNumber, DrawerId, Answer, Status, TimeLimit, StartedAt, EndedAt, CorrectPlayerIds);
+    }
+    
+    // ドメインの操作を表現する関数
+    public Turn StartSettingAnswer()
+    {
+        var clone = Clone();
+        clone.Status = TurnStatus.SettingAnswer;
+        return clone;
+    }
+}
+```
+
+#### 4. 命名規則
+
+- **操作を表現**: `StartDrawing`, `FinishTurn`, `AddCorrectPlayer`
+- **状態変更を表現**: `SetAnswerAndStartDrawing`
+- **動詞 + 名詞**: 何をするかを明確に表現
+
+#### 5. テスト
+
+各ドメイン操作に対して、適切なテストを作成する：
+
+```csharp
+[Fact]
+public void お題設定を開始できる()
+{
+    var turn = Turn.CreateInitial(drawerId, 60);
+    var updatedTurn = turn.StartSettingAnswer();
+    
+    Assert.Equal(TurnStatus.SettingAnswer, updatedTurn.Status);
 }
 ```
 

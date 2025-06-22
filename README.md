@@ -198,8 +198,11 @@ esiritori/
 │   └── EsiritoriApi.Tests/        # テストプロジェクト
 ├── design/                # 設計ドキュメント
 ├── docs/                  # 開発ガイドライン
+│   └── Coderule.md        # コーディングルール
 ├── docker-compose.yml     # Docker Compose設定
 ├── Dockerfile.dev         # フロントエンド開発用Dockerfile
+├── .eslintrc.json         # ESLint設定
+├── .gitignore             # Git除外設定
 └── .env.local            # 環境変数設定
 ```
 
@@ -246,3 +249,7 @@ npm install -g pnpm
 **LocalStackに接続できない**:
 - LocalStackコンテナが起動しているか確認
 - 環境変数`LOCALSTACK_ENDPOINT`が正しく設定されているか確認
+
+## 📚 開発ガイドライン
+
+- [コーディングルール](docs/Coderule.md) - Value Objectの実装ルールなど

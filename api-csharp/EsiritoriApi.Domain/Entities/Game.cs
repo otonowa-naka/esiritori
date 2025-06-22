@@ -108,7 +108,7 @@ public sealed class Game : IEquatable<Game>
 
         var firstDrawer = Players.First();
         var updatedTurn = CurrentRound.CurrentTurn
-            .WithStatus(TurnStatus.SettingAnswer);
+            .StartSettingAnswer();
 
         var updatedRound = CurrentRound
             .WithTurn(updatedTurn)

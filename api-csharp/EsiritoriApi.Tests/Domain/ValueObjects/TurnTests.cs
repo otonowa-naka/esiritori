@@ -45,14 +45,14 @@ public sealed class TurnTests
     }
 
     [Fact]
-    public void ステータスを更新できる()
+    public void お題設定を開始できる()
     {
         var drawerId = new PlayerId("drawer123");
         var turn = Turn.CreateInitial(drawerId, 60);
 
-        var updatedTurn = turn.WithStatus(TurnStatus.Drawing);
+        var updatedTurn = turn.StartSettingAnswer();
 
-        Assert.Equal(TurnStatus.Drawing, updatedTurn.Status);
+        Assert.Equal(TurnStatus.SettingAnswer, updatedTurn.Status);
         Assert.Equal(turn.TurnNumber, updatedTurn.TurnNumber);
         Assert.Equal(turn.DrawerId, updatedTurn.DrawerId);
         Assert.Equal(turn.Answer, updatedTurn.Answer);
@@ -60,20 +60,19 @@ public sealed class TurnTests
     }
 
     [Fact]
-    public void 回答を設定して描画を開始できる()
+    public void 描画を開始できる()
     {
         var drawerId = new PlayerId("drawer123");
         var turn = Turn.CreateInitial(drawerId, 60);
-        var answer = "ねこ";
         var startTime = DateTime.UtcNow;
 
-        var updatedTurn = turn.SetAnswerAndStartDrawing(answer, startTime);
+        var updatedTurn = turn.StartDrawing(startTime);
 
-        Assert.Equal(answer, updatedTurn.Answer);
         Assert.Equal(TurnStatus.Drawing, updatedTurn.Status);
         Assert.Equal(startTime, updatedTurn.StartedAt);
         Assert.Equal(turn.TurnNumber, updatedTurn.TurnNumber);
         Assert.Equal(turn.DrawerId, updatedTurn.DrawerId);
+        Assert.Equal(turn.Answer, updatedTurn.Answer);
         Assert.Equal(turn.TimeLimit, updatedTurn.TimeLimit);
     }
 

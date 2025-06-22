@@ -1,24 +1,74 @@
 namespace EsiritoriApi.Domain.ValueObjects;
 
+/// <summary>
+/// ターンの状態を表す列挙型
+/// </summary>
 public enum TurnStatus
 {
+    /// <summary>未開始</summary>
     NotStarted,
+    /// <summary>回答設定中</summary>
     SettingAnswer,
+    /// <summary>描画中</summary>
     Drawing,
+    /// <summary>終了（正解者がいるか、時間切れ）</summary>
     Finished
 }
 
+/// <summary>
+/// ゲームのターンを表す値オブジェクト
+/// 
+/// ターンは以下の状態遷移を行います：
+/// NotStarted → SettingAnswer → Drawing → Finished
+/// 
+/// 各ターンでは：
+/// - 1人のプレイヤーが描画者として選ばれる
+/// - 描画者がお題を設定する
+/// - 描画者が制限時間内にお題を描画する
+/// - 他のプレイヤーがお題を当てる
+/// - 正解者が出るか時間切れでターン終了
+/// </summary>
 public sealed class Turn : IEquatable<Turn>
 {
-    public int TurnNumber { get; }
-    public PlayerId DrawerId { get; }
-    public string Answer { get; }
-    public TurnStatus Status { get; }
-    public int TimeLimit { get; }
-    public DateTime StartedAt { get; }
-    public Option<DateTime> EndedAt { get; }
-    public IReadOnlyList<PlayerId> CorrectPlayerIds { get; }
+    /// <summary>ターン番号（1-10）</summary>
+    public int TurnNumber { get; private set; }
+    
+    /// <summary>描画者のプレイヤーID</summary>
+    public PlayerId DrawerId { get; private set; }
+    
+    /// <summary>お題（ひらがな、1-50文字）</summary>
+    public string Answer { get; private set; }
+    
+    /// <summary>ターンの現在の状態</summary>
+    public TurnStatus Status { get; private set; }
+    
+    /// <summary>制限時間（秒、1-300）</summary>
+    public int TimeLimit { get; private set; }
+    
+    /// <summary>ターン開始時刻</summary>
+    public DateTime StartedAt { get; private set; }
+    
+    /// <summary>ターン終了時刻（オプション）</summary>
+    public Option<DateTime> EndedAt { get; private set; }
+    
+    /// <summary>正解者のプレイヤーIDリスト</summary>
+    public IReadOnlyList<PlayerId> CorrectPlayerIds { get; private set; }
 
+    /// <summary>
+    /// ターンの新しいインスタンスを作成します
+    /// </summary>
+    /// <param name="turnNumber">ターン番号（1-10）</param>
+    /// <param name="drawerId">描画者のプレイヤーID</param>
+    /// <param name="answer">お題（ひらがな、1-50文字）</param>
+    /// <param name="status">ターンの状態</param>
+    /// <param name="timeLimit">制限時間（秒、1-300）</param>
+    /// <param name="startedAt">開始時刻</param>
+    /// <param name="endedAt">終了時刻（オプション）</param>
+    /// <param name="correctPlayerIds">正解者のプレイヤーIDリスト（オプション）</param>
+    /// <exception cref="ArgumentException">
+    /// ターン番号が1-10の範囲外、制限時間が1-300の範囲外、お題が50文字を超える、お題がひらがな以外の文字を含む場合
+    /// </exception>
+    /// <exception cref="ArgumentNullException">drawerIdがnullの場合</exception>
     public Turn(int turnNumber, PlayerId drawerId, string answer, TurnStatus status, int timeLimit, 
                 DateTime startedAt, Option<DateTime> endedAt, IEnumerable<PlayerId>? correctPlayerIds = null)
     {
@@ -52,27 +102,84 @@ public sealed class Turn : IEquatable<Turn>
         CorrectPlayerIds = correctPlayerIds?.ToList().AsReadOnly() ?? new List<PlayerId>().AsReadOnly();
     }
 
+    /// <summary>
+    /// 初期状態のターンを作成します
+    /// </summary>
+    /// <param name="drawerId">描画者のプレイヤーID</param>
+    /// <param name="timeLimit">制限時間（秒）</param>
+    /// <returns>初期状態のターン</returns>
     public static Turn CreateInitial(PlayerId drawerId, int timeLimit)
     {
         return new Turn(1, drawerId, "", TurnStatus.NotStarted, timeLimit,
                        DateTime.MinValue, Option<DateTime>.None());
     }
 
+    /// <summary>
+    /// 現在のターンのコピーを作成します
+    /// </summary>
+    /// <returns>現在のターンのコピー</returns>
+    private Turn Clone()
+    {
+        return new Turn(TurnNumber, DrawerId, Answer, Status, TimeLimit, StartedAt, EndedAt, CorrectPlayerIds);
+    }
+
+    /// <summary>
+    /// お題を設定して描画を開始します
+    /// </summary>
+    /// <param name="answer">設定するお題（ひらがな）</param>
+    /// <param name="startTime">描画開始時刻</param>
+    /// <returns>お題が設定され描画状態になった新しいターン</returns>
     public Turn SetAnswerAndStartDrawing(string answer, DateTime startTime)
     {
-        return new Turn(TurnNumber, DrawerId, answer, TurnStatus.Drawing, TimeLimit, startTime, EndedAt, CorrectPlayerIds);
+        var clone = Clone();
+        clone.Answer = answer;
+        clone.Status = TurnStatus.Drawing;
+        clone.StartedAt = startTime;
+        return clone;
     }
 
-    public Turn WithStatus(TurnStatus status)
+    /// <summary>
+    /// お題設定フェーズを開始します
+    /// </summary>
+    /// <returns>お題設定状態になった新しいターン</returns>
+    public Turn StartSettingAnswer()
     {
-        return new Turn(TurnNumber, DrawerId, Answer, status, TimeLimit, StartedAt, EndedAt, CorrectPlayerIds);
+        var clone = Clone();
+        clone.Status = TurnStatus.SettingAnswer;
+        return clone;
     }
 
+    /// <summary>
+    /// 描画フェーズを開始します
+    /// </summary>
+    /// <param name="startTime">描画開始時刻</param>
+    /// <returns>描画状態になった新しいターン</returns>
+    public Turn StartDrawing(DateTime startTime)
+    {
+        var clone = Clone();
+        clone.Status = TurnStatus.Drawing;
+        clone.StartedAt = startTime;
+        return clone;
+    }
+
+    /// <summary>
+    /// ターンを終了します
+    /// </summary>
+    /// <param name="endedAt">終了時刻</param>
+    /// <returns>終了状態になった新しいターン</returns>
     public Turn FinishTurn(DateTime endedAt)
     {
-        return new Turn(TurnNumber, DrawerId, Answer, TurnStatus.Finished, TimeLimit, StartedAt, Option<DateTime>.Some(endedAt), CorrectPlayerIds);
+        var clone = Clone();
+        clone.Status = TurnStatus.Finished;
+        clone.EndedAt = Option<DateTime>.Some(endedAt);
+        return clone;
     }
 
+    /// <summary>
+    /// 正解者を追加します
+    /// </summary>
+    /// <param name="playerId">正解者のプレイヤーID</param>
+    /// <returns>正解者が追加された新しいターン（既に正解者リストに含まれている場合は変更なし）</returns>
     public Turn AddCorrectPlayer(PlayerId playerId)
     {
         if (CorrectPlayerIds.Any(id => id.Equals(playerId)))
@@ -82,9 +189,17 @@ public sealed class Turn : IEquatable<Turn>
 
         var updatedCorrectPlayers = CorrectPlayerIds.ToList();
         updatedCorrectPlayers.Add(playerId);
-        return new Turn(TurnNumber, DrawerId, Answer, Status, TimeLimit, StartedAt, EndedAt, updatedCorrectPlayers);
+        
+        var clone = Clone();
+        clone.CorrectPlayerIds = updatedCorrectPlayers.AsReadOnly();
+        return clone;
     }
 
+    /// <summary>
+    /// 他のターンと等価かどうかを判定します
+    /// </summary>
+    /// <param name="other">比較対象のターン</param>
+    /// <returns>等価な場合はtrue、そうでない場合はfalse</returns>
     public bool Equals(Turn? other)
     {
         return other is not null &&
@@ -98,21 +213,42 @@ public sealed class Turn : IEquatable<Turn>
                CorrectPlayerIds.SequenceEqual(other.CorrectPlayerIds);
     }
 
+    /// <summary>
+    /// 他のオブジェクトと等価かどうかを判定します
+    /// </summary>
+    /// <param name="obj">比較対象のオブジェクト</param>
+    /// <returns>等価な場合はtrue、そうでない場合はfalse</returns>
     public override bool Equals(object? obj)
     {
         return Equals(obj as Turn);
     }
 
+    /// <summary>
+    /// ハッシュコードを取得します
+    /// </summary>
+    /// <returns>ハッシュコード</returns>
     public override int GetHashCode()
     {
         return HashCode.Combine(TurnNumber, DrawerId, Answer, Status, TimeLimit, StartedAt, EndedAt, CorrectPlayerIds.Count);
     }
 
+    /// <summary>
+    /// 等価演算子
+    /// </summary>
+    /// <param name="left">左辺のターン</param>
+    /// <param name="right">右辺のターン</param>
+    /// <returns>等価な場合はtrue、そうでない場合はfalse</returns>
     public static bool operator ==(Turn? left, Turn? right)
     {
         return EqualityComparer<Turn>.Default.Equals(left, right);
     }
 
+    /// <summary>
+    /// 不等価演算子
+    /// </summary>
+    /// <param name="left">左辺のターン</param>
+    /// <param name="right">右辺のターン</param>
+    /// <returns>不等価な場合はtrue、そうでない場合はfalse</returns>
     public static bool operator !=(Turn? left, Turn? right)
     {
         return !(left == right);
