@@ -32,7 +32,7 @@ public sealed class RoundTests
         var startedAt = DateTime.UtcNow;
         var round = new Round(roundNumber, currentTurn, startedAt, Option<DateTime>.None());
 
-        var nextTurn = new Turn(2, drawerId2, "", TurnStatus.NotStarted, 60, DateTime.MinValue, Option<DateTime>.None());
+        var nextTurn = new Turn(2, drawerId2, new Answer(""), TurnStatus.SettingAnswer, 60, DateTime.MinValue, Option<DateTime>.None());
         var updatedRound = round.WithTurn(nextTurn);
 
         Assert.Equal(roundNumber, updatedRound.RoundNumber);
@@ -94,7 +94,7 @@ public sealed class RoundTests
     {
         var drawerId = new PlayerId("drawer123");
         var turn1 = Turn.CreateInitial(drawerId, 60);
-        var turn2 = new Turn(2, drawerId, "", TurnStatus.NotStarted, 60, DateTime.MinValue, Option<DateTime>.None());
+        var turn2 = new Turn(2, drawerId, new Answer(""), TurnStatus.SettingAnswer, 60, DateTime.MinValue, Option<DateTime>.None());
         var startTime = DateTime.UtcNow;
         var round1 = new Round(1, turn1, startTime, Option<DateTime>.None());
         var round2 = new Round(1, turn2, startTime, Option<DateTime>.None());

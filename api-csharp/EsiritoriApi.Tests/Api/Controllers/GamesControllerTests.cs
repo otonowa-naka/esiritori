@@ -51,7 +51,7 @@ public sealed class GamesControllerTests
                     CurrentTurn = new TurnDto
                     {
                         TurnNumber = 1,
-                        Status = "NotStarted",
+                        Status = "SettingAnswer",
                         DrawerId = "creator123",
                         Answer = ""
                     }

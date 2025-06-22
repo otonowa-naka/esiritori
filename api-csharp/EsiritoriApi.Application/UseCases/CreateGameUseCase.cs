@@ -73,7 +73,7 @@ public class CreateGameUseCase : ICreateGameUseCase
                         TurnNumber = game.CurrentRound.CurrentTurn.TurnNumber,
                         Status = game.CurrentRound.CurrentTurn.Status.ToString(),
                         DrawerId = game.CurrentRound.CurrentTurn.DrawerId.Value,
-                        Answer = game.CurrentRound.CurrentTurn.Answer
+                        Answer = game.CurrentRound.CurrentTurn.Answer.Value
                     }
                 },
                 Players = game.Players.Select(player => new PlayerDto

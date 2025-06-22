@@ -107,11 +107,7 @@ public sealed class Game : IEquatable<Game>
         }
 
         var firstDrawer = Players.First();
-        var updatedTurn = CurrentRound.CurrentTurn
-            .StartSettingAnswer();
-
         var updatedRound = CurrentRound
-            .WithTurn(updatedTurn)
             .WithStartTime(DateTime.UtcNow);
 
         var updatedPlayers = Players.Select(p =>

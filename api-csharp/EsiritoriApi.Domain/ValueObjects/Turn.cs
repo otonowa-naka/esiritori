@@ -5,8 +5,6 @@ namespace EsiritoriApi.Domain.ValueObjects;
 /// </summary>
 public enum TurnStatus
 {
-    /// <summary>未開始</summary>
-    NotStarted,
     /// <summary>回答設定中</summary>
     SettingAnswer,
     /// <summary>描画中</summary>
@@ -19,7 +17,7 @@ public enum TurnStatus
 /// ゲームのターンを表す値オブジェクト
 /// 
 /// ターンは以下の状態遷移を行います：
-/// NotStarted → SettingAnswer → Drawing → Finished
+/// SettingAnswer → Drawing → Finished
 /// 
 /// 各ターンでは：
 /// - 1人のプレイヤーが描画者として選ばれる
@@ -37,7 +35,7 @@ public sealed class Turn : IEquatable<Turn>
     public PlayerId DrawerId { get; private set; }
     
     /// <summary>お題（ひらがな、1-50文字）</summary>
-    public string Answer { get; private set; }
+    public Answer Answer { get; private set; }
     
     /// <summary>ターンの現在の状態</summary>
     public TurnStatus Status { get; private set; }
@@ -59,17 +57,17 @@ public sealed class Turn : IEquatable<Turn>
     /// </summary>
     /// <param name="turnNumber">ターン番号（1-10）</param>
     /// <param name="drawerId">描画者のプレイヤーID</param>
-    /// <param name="answer">お題（ひらがな、1-50文字）</param>
+    /// <param name="answer">お題</param>
     /// <param name="status">ターンの状態</param>
     /// <param name="timeLimit">制限時間（秒、1-300）</param>
     /// <param name="startedAt">開始時刻</param>
     /// <param name="endedAt">終了時刻（オプション）</param>
     /// <param name="correctPlayerIds">正解者のプレイヤーIDリスト（オプション）</param>
     /// <exception cref="ArgumentException">
-    /// ターン番号が1-10の範囲外、制限時間が1-300の範囲外、お題が50文字を超える、お題がひらがな以外の文字を含む場合
+    /// ターン番号が1-10の範囲外、制限時間が1-300の範囲外の場合
     /// </exception>
     /// <exception cref="ArgumentNullException">drawerIdがnullの場合</exception>
-    public Turn(int turnNumber, PlayerId drawerId, string answer, TurnStatus status, int timeLimit, 
+    public Turn(int turnNumber, PlayerId drawerId, Answer answer, TurnStatus status, int timeLimit, 
                 DateTime startedAt, Option<DateTime> endedAt, IEnumerable<PlayerId>? correctPlayerIds = null)
     {
         if (turnNumber < 1 || turnNumber > 10)
@@ -82,19 +80,9 @@ public sealed class Turn : IEquatable<Turn>
             throw new ArgumentException("制限時間は1秒から300秒の間で設定してください", nameof(timeLimit));
         }
 
-        if (answer.Length > 50)
-        {
-            throw new ArgumentException("お題は50文字以下である必要があります", nameof(answer));
-        }
-
-        if (!string.IsNullOrEmpty(answer) && !System.Text.RegularExpressions.Regex.IsMatch(answer, @"^[\u3041-\u3096]+$"))
-        {
-            throw new ArgumentException("お題はひらがなで入力してください", nameof(answer));
-        }
-
         TurnNumber = turnNumber;
         DrawerId = drawerId ?? throw new ArgumentNullException(nameof(drawerId));
-        Answer = answer;
+        Answer = answer ?? throw new ArgumentNullException(nameof(answer));
         Status = status;
         TimeLimit = timeLimit;
         StartedAt = startedAt;
@@ -110,7 +98,7 @@ public sealed class Turn : IEquatable<Turn>
     /// <returns>初期状態のターン</returns>
     public static Turn CreateInitial(PlayerId drawerId, int timeLimit)
     {
-        return new Turn(1, drawerId, "", TurnStatus.NotStarted, timeLimit,
+        return new Turn(1, drawerId, Answer.Empty(), TurnStatus.SettingAnswer, timeLimit,
                        DateTime.MinValue, Option<DateTime>.None());
     }
 
@@ -126,10 +114,10 @@ public sealed class Turn : IEquatable<Turn>
     /// <summary>
     /// お題を設定して描画を開始します
     /// </summary>
-    /// <param name="answer">設定するお題（ひらがな）</param>
+    /// <param name="answer">設定するお題</param>
     /// <param name="startTime">描画開始時刻</param>
     /// <returns>お題が設定され描画状態になった新しいターン</returns>
-    public Turn SetAnswerAndStartDrawing(string answer, DateTime startTime)
+    public Turn SetAnswerAndStartDrawing(Answer answer, DateTime startTime)
     {
         var clone = Clone();
         clone.Answer = answer;
@@ -139,35 +127,46 @@ public sealed class Turn : IEquatable<Turn>
     }
 
     /// <summary>
-    /// お題設定フェーズを開始します
+    /// 回答者の答えをチェックしてターンの状態を更新します
     /// </summary>
-    /// <returns>お題設定状態になった新しいターン</returns>
-    public Turn StartSettingAnswer()
+    /// <param name="playerAnswer">回答者の答え</param>
+    /// <param name="playerId">回答者のプレイヤーID</param>
+    /// <param name="endedAt">回答時刻</param>
+    /// <returns>正解の場合は終了状態、間違いの場合は継続状態の新しいターン</returns>
+    public Turn CheckAnswer(Answer playerAnswer, PlayerId playerId, DateTime endedAt)
     {
-        var clone = Clone();
-        clone.Status = TurnStatus.SettingAnswer;
-        return clone;
+        if (playerAnswer == null)
+        {
+            throw new ArgumentNullException(nameof(playerAnswer));
+        }
+
+        if (playerId == null)
+        {
+            throw new ArgumentNullException(nameof(playerId));
+        }
+
+        // 回答が正解かどうかをチェック
+        if (Answer.IsCorrect(playerAnswer))
+        {
+            // 正解の場合：正解者を追加して終了
+            var clone = AddCorrectPlayer(playerId);
+            clone.Status = TurnStatus.Finished;
+            clone.EndedAt = Option<DateTime>.Some(endedAt);
+            return clone;
+        }
+        else
+        {
+            // 不正解の場合：継続（現在の状態を維持）
+            return this;
+        }
     }
 
     /// <summary>
-    /// 描画フェーズを開始します
-    /// </summary>
-    /// <param name="startTime">描画開始時刻</param>
-    /// <returns>描画状態になった新しいターン</returns>
-    public Turn StartDrawing(DateTime startTime)
-    {
-        var clone = Clone();
-        clone.Status = TurnStatus.Drawing;
-        clone.StartedAt = startTime;
-        return clone;
-    }
-
-    /// <summary>
-    /// ターンを終了します
+    /// 時間切れでターンを終了します
     /// </summary>
     /// <param name="endedAt">終了時刻</param>
     /// <returns>終了状態になった新しいターン</returns>
-    public Turn FinishTurn(DateTime endedAt)
+    public Turn FinishTurnByTimeout(DateTime endedAt)
     {
         var clone = Clone();
         clone.Status = TurnStatus.Finished;
@@ -205,7 +204,7 @@ public sealed class Turn : IEquatable<Turn>
         return other is not null &&
                TurnNumber == other.TurnNumber &&
                DrawerId.Equals(other.DrawerId) &&
-               Answer == other.Answer &&
+               Answer.Equals(other.Answer) &&
                Status == other.Status &&
                TimeLimit == other.TimeLimit &&
                StartedAt == other.StartedAt &&
