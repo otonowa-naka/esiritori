@@ -35,7 +35,7 @@ public sealed class Turn : IEquatable<Turn>
     public PlayerId DrawerId { get; private set; }
     
     /// <summary>お題（ひらがな、1-50文字）</summary>
-    public Answer Answer { get; private set; }
+    public Option<Answer> Answer { get; private set; }
     
     /// <summary>ターンの現在の状態</summary>
     public TurnStatus Status { get; private set; }
@@ -67,7 +67,7 @@ public sealed class Turn : IEquatable<Turn>
     /// ターン番号が1-10の範囲外、制限時間が1-300の範囲外の場合
     /// </exception>
     /// <exception cref="ArgumentNullException">drawerIdがnullの場合</exception>
-    public Turn(int turnNumber, PlayerId drawerId, Answer answer, TurnStatus status, int timeLimit, 
+    public Turn(int turnNumber, PlayerId drawerId, Option<Answer> answer, TurnStatus status, int timeLimit, 
                 DateTime startedAt, Option<DateTime> endedAt, IEnumerable<PlayerId>? correctPlayerIds = null)
     {
         if (turnNumber < 1 || turnNumber > 10)
@@ -82,7 +82,7 @@ public sealed class Turn : IEquatable<Turn>
 
         TurnNumber = turnNumber;
         DrawerId = drawerId ?? throw new ArgumentNullException(nameof(drawerId));
-        Answer = answer ?? throw new ArgumentNullException(nameof(answer));
+        Answer = answer;
         Status = status;
         TimeLimit = timeLimit;
         StartedAt = startedAt;
@@ -98,7 +98,7 @@ public sealed class Turn : IEquatable<Turn>
     /// <returns>初期状態のターン</returns>
     public static Turn CreateInitial(PlayerId drawerId, int timeLimit)
     {
-        return new Turn(1, drawerId, Answer.Empty(), TurnStatus.SettingAnswer, timeLimit,
+        return new Turn(1, drawerId, Option<Answer>.None(), TurnStatus.SettingAnswer, timeLimit,
                        DateTime.MinValue, Option<DateTime>.None());
     }
 
@@ -120,7 +120,7 @@ public sealed class Turn : IEquatable<Turn>
     public Turn SetAnswerAndStartDrawing(Answer answer, DateTime startTime)
     {
         var clone = Clone();
-        clone.Answer = answer;
+        clone.Answer = Option<Answer>.Some(answer);
         clone.Status = TurnStatus.Drawing;
         clone.StartedAt = startTime;
         return clone;
@@ -146,10 +146,15 @@ public sealed class Turn : IEquatable<Turn>
         }
 
         // 回答が正解かどうかをチェック
-        if (Answer.IsCorrect(playerAnswer))
+        if (Answer.HasValue && Answer.Value.IsCorrect(playerAnswer))
         {
             // 正解の場合：正解者を追加して終了
-            var clone = AddCorrectPlayer(playerId);
+            var updatedCorrectPlayers = CorrectPlayerIds.Contains(playerId) 
+                ? CorrectPlayerIds 
+                : CorrectPlayerIds.Concat(new[] { playerId }).ToList().AsReadOnly();
+            
+            var clone = Clone();
+            clone.CorrectPlayerIds = updatedCorrectPlayers;
             clone.Status = TurnStatus.Finished;
             clone.EndedAt = Option<DateTime>.Some(endedAt);
             return clone;
@@ -173,26 +178,7 @@ public sealed class Turn : IEquatable<Turn>
         clone.EndedAt = Option<DateTime>.Some(endedAt);
         return clone;
     }
-
-    /// <summary>
-    /// 正解者を追加します
-    /// </summary>
-    /// <param name="playerId">正解者のプレイヤーID</param>
-    /// <returns>正解者が追加された新しいターン（既に正解者リストに含まれている場合は変更なし）</returns>
-    public Turn AddCorrectPlayer(PlayerId playerId)
-    {
-        if (CorrectPlayerIds.Any(id => id.Equals(playerId)))
-        {
-            return this;
-        }
-
-        var updatedCorrectPlayers = CorrectPlayerIds.ToList();
-        updatedCorrectPlayers.Add(playerId);
-        
-        var clone = Clone();
-        clone.CorrectPlayerIds = updatedCorrectPlayers.AsReadOnly();
-        return clone;
-    }
+    #region その他のメソッド
 
     /// <summary>
     /// 他のターンと等価かどうかを判定します
@@ -211,6 +197,7 @@ public sealed class Turn : IEquatable<Turn>
                EndedAt == other.EndedAt &&
                CorrectPlayerIds.SequenceEqual(other.CorrectPlayerIds);
     }
+
 
     /// <summary>
     /// 他のオブジェクトと等価かどうかを判定します
@@ -252,4 +239,6 @@ public sealed class Turn : IEquatable<Turn>
     {
         return !(left == right);
     }
+
+    #endregion
 }

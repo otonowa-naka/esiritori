@@ -16,11 +16,11 @@ public sealed class TurnTests
         var startedAt = DateTime.MinValue;
         var endedAt = Option<DateTime>.None();
 
-        var turn = new Turn(turnNumber, drawerId, answer, status, timeLimit, startedAt, endedAt);
+        var turn = new Turn(turnNumber, drawerId, Option<Answer>.Some(answer), status, timeLimit, startedAt, endedAt);
 
         Assert.Equal(turnNumber, turn.TurnNumber);
         Assert.Equal(drawerId, turn.DrawerId);
-        Assert.Equal(answer, turn.Answer);
+        Assert.Equal(Option<Answer>.Some(answer), turn.Answer);
         Assert.Equal(status, turn.Status);
         Assert.Equal(timeLimit, turn.TimeLimit);
         Assert.Equal(startedAt, turn.StartedAt);
@@ -37,7 +37,7 @@ public sealed class TurnTests
 
         Assert.Equal(1, turn.TurnNumber);
         Assert.Equal(drawerId, turn.DrawerId);
-        Assert.Equal(Answer.Empty(), turn.Answer);
+        Assert.Equal(Option<Answer>.None(), turn.Answer);
         Assert.Equal(TurnStatus.SettingAnswer, turn.Status);
         Assert.Equal(timeLimit, turn.TimeLimit);
         Assert.Equal(DateTime.MinValue, turn.StartedAt);
@@ -54,26 +54,13 @@ public sealed class TurnTests
 
         var updatedTurn = turn.SetAnswerAndStartDrawing(answer, startTime);
 
-        Assert.Equal(answer, updatedTurn.Answer);
+        Assert.Equal(Option<Answer>.Some(answer), updatedTurn.Answer);
         Assert.Equal(TurnStatus.Drawing, updatedTurn.Status);
         Assert.Equal(startTime, updatedTurn.StartedAt);
         Assert.Equal(turn.TurnNumber, updatedTurn.TurnNumber);
         Assert.Equal(turn.DrawerId, updatedTurn.DrawerId);
     }
 
-    [Fact]
-    public void 正解プレイヤーを追加できる()
-    {
-        var drawerId = new PlayerId("drawer123");
-        var turn = Turn.CreateInitial(drawerId, 60);
-        var correctPlayerId = new PlayerId("correct123");
-
-        var updatedTurn = turn.AddCorrectPlayer(correctPlayerId);
-
-        Assert.Contains(correctPlayerId, updatedTurn.CorrectPlayerIds);
-        Assert.Equal(turn.TurnNumber, updatedTurn.TurnNumber);
-        Assert.Equal(turn.DrawerId, updatedTurn.DrawerId);
-    }
 
     [Fact]
     public void 正解の回答でターンが終了する()
@@ -138,8 +125,8 @@ public sealed class TurnTests
     {
         var drawerId = new PlayerId("drawer123");
         var startTime = DateTime.UtcNow;
-        var turn1 = new Turn(1, drawerId, Answer.Empty(), TurnStatus.Drawing, 60, startTime, Option<DateTime>.None());
-        var turn2 = new Turn(1, drawerId, Answer.Empty(), TurnStatus.Drawing, 60, startTime, Option<DateTime>.None());
+        var turn1 = new Turn(1, drawerId, Option<Answer>.Some(Answer.Empty()), TurnStatus.Drawing, 60, startTime, Option<DateTime>.None());
+        var turn2 = new Turn(1, drawerId, Option<Answer>.Some(Answer.Empty()), TurnStatus.Drawing, 60, startTime, Option<DateTime>.None());
 
         Assert.Equal(turn1, turn2);
         Assert.True(turn1 == turn2);
@@ -151,8 +138,8 @@ public sealed class TurnTests
     public void 異なる値のTurn同士は等価でない()
     {
         var drawerId = new PlayerId("drawer123");
-        var turn1 = new Turn(1, drawerId, new Answer("ねこ"), TurnStatus.SettingAnswer, 60, DateTime.MinValue, Option<DateTime>.None());
-        var turn2 = new Turn(1, drawerId, new Answer("いぬ"), TurnStatus.SettingAnswer, 60, DateTime.MinValue, Option<DateTime>.None());
+        var turn1 = new Turn(1, drawerId, Option<Answer>.Some(new Answer("ねこ")), TurnStatus.SettingAnswer, 60, DateTime.MinValue, Option<DateTime>.None());
+        var turn2 = new Turn(1, drawerId, Option<Answer>.Some(new Answer("いぬ")), TurnStatus.SettingAnswer, 60, DateTime.MinValue, Option<DateTime>.None());
 
         Assert.NotEqual(turn1, turn2);
         Assert.False(turn1 == turn2);
@@ -174,14 +161,14 @@ public sealed class TurnTests
     {
         var drawerId = new PlayerId("drawer123");
 
-        var exception = Assert.Throws<ArgumentException>(() => new Turn(0, drawerId, Answer.Empty(), TurnStatus.SettingAnswer, 60, DateTime.MinValue, Option<DateTime>.None()));
+        var exception = Assert.Throws<ArgumentException>(() => new Turn(0, drawerId, Option<Answer>.Some(Answer.Empty()), TurnStatus.SettingAnswer, 60, DateTime.MinValue, Option<DateTime>.None()));
         Assert.Equal("ターン番号は1から10の間で設定してください (Parameter 'turnNumber')", exception.Message);
     }
 
     [Fact]
     public void nullDrawerIdの場合例外が発生する()
     {
-        Assert.Throws<ArgumentNullException>(() => new Turn(1, null!, Answer.Empty(), TurnStatus.SettingAnswer, 60, DateTime.MinValue, Option<DateTime>.None()));
+        Assert.Throws<ArgumentNullException>(() => new Turn(1, null!, Option<Answer>.Some(Answer.Empty()), TurnStatus.SettingAnswer, 60, DateTime.MinValue, Option<DateTime>.None()));
     }
 
     [Fact]
