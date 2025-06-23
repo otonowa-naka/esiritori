@@ -23,57 +23,6 @@ public sealed class RoundTests
     }
 
     [Fact]
-    public void ターンを更新できる()
-    {
-        var roundNumber = 1;
-        var drawerId1 = new PlayerId("drawer123");
-        var drawerId2 = new PlayerId("drawer456");
-        var currentTurn = Turn.CreateInitial(drawerId1, 60);
-        var startedAt = DateTime.UtcNow;
-        var round = new Round(roundNumber, currentTurn, startedAt, Option<DateTime>.None());
-
-        var nextTurn = new Turn(2, drawerId2, Option<Answer>.Some(new Answer("")), TurnStatus.SettingAnswer, 60, DateTime.MinValue, Option<DateTime>.None());
-        var updatedRound = round.WithTurn(nextTurn);
-
-        Assert.Equal(roundNumber, updatedRound.RoundNumber);
-        Assert.Equal(nextTurn, updatedRound.CurrentTurn);
-        Assert.Equal(2, updatedRound.CurrentTurn.TurnNumber);
-    }
-
-    [Fact]
-    public void 開始時間を設定できる()
-    {
-        var drawerId = new PlayerId("drawer123");
-        var turn = Turn.CreateInitial(drawerId, 60);
-        var originalStartTime = DateTime.UtcNow.AddMinutes(-1);
-        var round = new Round(1, turn, originalStartTime, Option<DateTime>.None());
-        var newStartTime = DateTime.UtcNow;
-
-        var updatedRound = round.WithStartTime(newStartTime);
-
-        Assert.Equal(newStartTime, updatedRound.StartedAt);
-        Assert.Equal(round.RoundNumber, updatedRound.RoundNumber);
-        Assert.Equal(round.CurrentTurn, updatedRound.CurrentTurn);
-    }
-
-    [Fact]
-    public void 終了時間を設定できる()
-    {
-        var drawerId = new PlayerId("drawer123");
-        var turn = Turn.CreateInitial(drawerId, 60);
-        var startTime = DateTime.UtcNow;
-        var round = new Round(1, turn, startTime, Option<DateTime>.None());
-        var endTime = DateTime.UtcNow.AddMinutes(5);
-
-        var updatedRound = round.WithEndTime(endTime);
-
-        Assert.True(updatedRound.EndedAt.HasValue);
-        Assert.Equal(endTime, updatedRound.EndedAt.Value);
-        Assert.Equal(round.RoundNumber, updatedRound.RoundNumber);
-        Assert.Equal(round.CurrentTurn, updatedRound.CurrentTurn);
-    }
-
-    [Fact]
     public void 同じ値のRound同士は等価である()
     {
         var drawerId = new PlayerId("drawer123");
@@ -135,12 +84,9 @@ public sealed class RoundTests
     [Fact]
     public void CreateNewファクトリメソッドで新しいラウンドが作成される()
     {
-        var drawerId = new PlayerId("drawer123");
-        var initialTurn = Turn.CreateInitial(drawerId, 60);
+        var initialTurn = Turn.CreateInitial(new PlayerId("drawer123"), 60);
         var startTime = DateTime.UtcNow;
-
-        var round = Round.CreateNew(initialTurn, startTime);
-
+        var round = Round.CreateInitial(initialTurn, startTime);
         Assert.Equal(1, round.RoundNumber);
         Assert.Equal(initialTurn, round.CurrentTurn);
         Assert.Equal(startTime, round.StartedAt);

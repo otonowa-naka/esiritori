@@ -50,7 +50,7 @@ public sealed class Game : IEquatable<Game>
         else
         {
             var initialTurn = Turn.CreateInitial(creatorId, settings.TimeLimit);
-            CurrentRound = Round.CreateNew(initialTurn, DateTime.UtcNow);
+            CurrentRound = Round.CreateInitial(initialTurn, DateTime.UtcNow);
         }
     }
 
@@ -107,8 +107,7 @@ public sealed class Game : IEquatable<Game>
         }
 
         var firstDrawer = Players.First();
-        var updatedRound = CurrentRound
-            .WithStartTime(DateTime.UtcNow);
+        var updatedRound = CurrentRound;
 
         var updatedPlayers = Players.Select(p =>
             p.Id.Equals(firstDrawer.Id) 
@@ -137,7 +136,7 @@ public sealed class Game : IEquatable<Game>
             throw new InvalidOperationException("ゲームは既に終了しています");
         }
 
-        var updatedRound = CurrentRound.WithEndTime(DateTime.UtcNow);
+        var updatedRound = CurrentRound;
 
         return new Game(
             Id,
