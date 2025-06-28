@@ -1,3 +1,5 @@
+using EsiritoriApi.Domain.Errors;
+
 namespace EsiritoriApi.Domain.ValueObjects;
 
 public sealed class PlayerId : IEquatable<PlayerId>
@@ -8,7 +10,7 @@ public sealed class PlayerId : IEquatable<PlayerId>
     {
         if (string.IsNullOrWhiteSpace(value))
         {
-            throw new ArgumentException("プレイヤーIDは空にできません", nameof(value));
+            throw new DomainErrorException(DomainErrorCodes.Player.InvalidId, "プレイヤーIDは空にできません");
         }
 
         Value = value.Trim();
@@ -42,5 +44,13 @@ public sealed class PlayerId : IEquatable<PlayerId>
     public static bool operator !=(PlayerId? left, PlayerId? right)
     {
         return !(left == right);
+    }
+
+    /// <summary>
+    /// 新しいPlayerIdを生成します（GUID）
+    /// </summary>
+    public static PlayerId NewId()
+    {
+        return new PlayerId(Guid.NewGuid().ToString());
     }
 }

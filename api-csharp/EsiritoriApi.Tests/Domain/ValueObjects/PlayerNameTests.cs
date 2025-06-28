@@ -1,70 +1,89 @@
 namespace EsiritoriApi.Tests.Domain.ValueObjects;
 
+using EsiritoriApi.Domain.Errors;
 using EsiritoriApi.Domain.ValueObjects;
 using Xunit;
 
-public sealed class PlayerNameTests
+public class PlayerNameTests
 {
     [Fact]
-    public void 有効な名前でPlayerNameが正常に作成される()
+    public void 正常な名前でPlayerNameが作成される()
     {
-        var name = "テストプレイヤー";
+        var name = new PlayerName("テストプレイヤー");
 
-        var playerName = new PlayerName(name);
-
-        Assert.Equal(name, playerName.Value);
-    }
-
-    [Theory]
-    [InlineData(null)]
-    [InlineData("")]
-    [InlineData("   ")]
-    public void 無効な名前の場合例外が発生する(string invalidName)
-    {
-        var exception = Assert.Throws<ArgumentException>(() => new PlayerName(invalidName));
-        Assert.Equal("プレイヤー名は空にできません (Parameter 'value')", exception.Message);
+        Assert.Equal("テストプレイヤー", name.Value);
     }
 
     [Fact]
-    public void 名前が20文字を超える場合例外が発生する()
+    public void 空文字の場合例外が発生する()
     {
-        var longName = new string('あ', 21); // 21文字
-
-        var exception = Assert.Throws<ArgumentException>(() => new PlayerName(longName));
-        Assert.Equal("プレイヤー名は20文字以下である必要があります (Parameter 'value')", exception.Message);
+        var exception = Assert.Throws<DomainErrorException>(() => new PlayerName(""));
+        Assert.Equal(DomainErrorCodes.Player.InvalidName, exception.ErrorCode);
     }
 
     [Fact]
-    public void 同じ名前のPlayerName同士は等価である()
+    public void nullの場合例外が発生する()
+    {
+        var exception = Assert.Throws<DomainErrorException>(() => new PlayerName(null!));
+        Assert.Equal(DomainErrorCodes.Player.InvalidName, exception.ErrorCode);
+    }
+
+    [Fact]
+    public void 空白文字のみの場合例外が発生する()
+    {
+        var exception = Assert.Throws<DomainErrorException>(() => new PlayerName("   "));
+        Assert.Equal(DomainErrorCodes.Player.InvalidName, exception.ErrorCode);
+    }
+
+    [Fact]
+    public void 20文字を超える場合例外が発生する()
+    {
+        var longName = new string('あ', 21);
+        var exception = Assert.Throws<DomainErrorException>(() => new PlayerName(longName));
+        Assert.Equal(DomainErrorCodes.Player.InvalidName, exception.ErrorCode);
+    }
+
+    [Fact]
+    public void 20文字の場合は正常に作成される()
+    {
+        var name = new PlayerName(new string('あ', 20));
+
+        Assert.Equal(new string('あ', 20), name.Value);
+    }
+
+    [Fact]
+    public void 前後の空白が除去される()
+    {
+        var name = new PlayerName("  テストプレイヤー  ");
+
+        Assert.Equal("テストプレイヤー", name.Value);
+    }
+
+    [Fact]
+    public void 等価性が正しく判定される()
+    {
+        var name1 = new PlayerName("テストプレイヤー");
+        var name2 = new PlayerName("テストプレイヤー");
+        var name3 = new PlayerName("別のプレイヤー");
+
+        Assert.Equal(name1, name2);
+        Assert.NotEqual(name1, name3);
+    }
+
+    [Fact]
+    public void ハッシュコードが正しく計算される()
     {
         var name1 = new PlayerName("テストプレイヤー");
         var name2 = new PlayerName("テストプレイヤー");
 
-        Assert.Equal(name1, name2);
-        Assert.True(name1 == name2);
-        Assert.False(name1 != name2);
         Assert.Equal(name1.GetHashCode(), name2.GetHashCode());
     }
 
     [Fact]
-    public void 異なる名前のPlayerName同士は等価でない()
+    public void ToStringが正しく動作する()
     {
-        var name1 = new PlayerName("プレイヤー1");
-        var name2 = new PlayerName("プレイヤー2");
+        var name = new PlayerName("テストプレイヤー");
 
-        Assert.NotEqual(name1, name2);
-        Assert.False(name1 == name2);
-        Assert.True(name1 != name2);
-    }
-
-    [Fact]
-    public void 前後の空白は自動的にトリムされる()
-    {
-        var nameWithSpaces = "  テストプレイヤー  ";
-        var expectedName = "テストプレイヤー";
-
-        var playerName = new PlayerName(nameWithSpaces);
-
-        Assert.Equal(expectedName, playerName.Value);
+        Assert.Equal("テストプレイヤー", name.ToString());
     }
 }

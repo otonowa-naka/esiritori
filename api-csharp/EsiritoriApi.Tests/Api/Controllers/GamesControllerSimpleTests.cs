@@ -13,8 +13,9 @@ public sealed class GamesControllerSimpleTests
     [Fact]
     public async Task 有効なリクエストでゲーム作成が成功する()
     {
-        var mockUseCase = new Mock<ICreateGameUseCase>();
-        var controller = new GamesController(mockUseCase.Object);
+        var mockCreateGameUseCase = new Mock<ICreateGameUseCase>();
+        var mockStartGameUseCase = new Mock<IStartGameUseCase>();
+        var controller = new GamesController(mockCreateGameUseCase.Object, mockStartGameUseCase.Object);
 
         var request = new CreateGameRequest
         {
@@ -49,7 +50,7 @@ public sealed class GamesControllerSimpleTests
             }
         };
 
-        mockUseCase.Setup(u => u.ExecuteAsync(It.IsAny<CreateGameRequest>(), It.IsAny<CancellationToken>()))
+        mockCreateGameUseCase.Setup(u => u.ExecuteAsync(It.IsAny<CreateGameRequest>(), It.IsAny<CancellationToken>()))
                    .ReturnsAsync(expectedResponse);
 
         var result = await controller.CreateGame(request);
@@ -63,8 +64,9 @@ public sealed class GamesControllerSimpleTests
     [Fact]
     public async Task ArgumentExceptionの場合BadRequestを返す()
     {
-        var mockUseCase = new Mock<ICreateGameUseCase>();
-        var controller = new GamesController(mockUseCase.Object);
+        var mockCreateGameUseCase = new Mock<ICreateGameUseCase>();
+        var mockStartGameUseCase = new Mock<IStartGameUseCase>();
+        var controller = new GamesController(mockCreateGameUseCase.Object, mockStartGameUseCase.Object);
 
         var request = new CreateGameRequest
         {
@@ -72,7 +74,7 @@ public sealed class GamesControllerSimpleTests
             Settings = new GameSettingsDto()
         };
 
-        mockUseCase.Setup(u => u.ExecuteAsync(It.IsAny<CreateGameRequest>(), It.IsAny<CancellationToken>()))
+        mockCreateGameUseCase.Setup(u => u.ExecuteAsync(It.IsAny<CreateGameRequest>(), It.IsAny<CancellationToken>()))
                    .ThrowsAsync(new ArgumentException("無効な引数"));
 
         var result = await controller.CreateGame(request);
@@ -85,8 +87,9 @@ public sealed class GamesControllerSimpleTests
     [Fact]
     public async Task 一般的な例外の場合InternalServerErrorを返す()
     {
-        var mockUseCase = new Mock<ICreateGameUseCase>();
-        var controller = new GamesController(mockUseCase.Object);
+        var mockCreateGameUseCase = new Mock<ICreateGameUseCase>();
+        var mockStartGameUseCase = new Mock<IStartGameUseCase>();
+        var controller = new GamesController(mockCreateGameUseCase.Object, mockStartGameUseCase.Object);
 
         var request = new CreateGameRequest
         {
@@ -94,7 +97,7 @@ public sealed class GamesControllerSimpleTests
             Settings = new GameSettingsDto()
         };
 
-        mockUseCase.Setup(u => u.ExecuteAsync(It.IsAny<CreateGameRequest>(), It.IsAny<CancellationToken>()))
+        mockCreateGameUseCase.Setup(u => u.ExecuteAsync(It.IsAny<CreateGameRequest>(), It.IsAny<CancellationToken>()))
                    .ThrowsAsync(new InvalidOperationException("内部エラー"));
 
         var result = await controller.CreateGame(request);

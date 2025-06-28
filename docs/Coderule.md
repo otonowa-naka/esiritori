@@ -342,5 +342,392 @@ public void お題設定を開始できる()
 - ドメイン層以外から直接newせず、原則としてバリューオブジェクト経由で生成・利用する。
 - 未設定状態はOption<T>型などで明示的に表現し、nullや特殊値で未設定を表さない。
 
+### ID生成の責務分離ルール
+
+#### 1. ID生成はValueObject側に集約する
+- **❌ 禁止**: エンティティやユースケースで独自のID生成ロジックを実装
+- **✅ 推奨**: ValueObjectの`NewId()`メソッドを使用
+
+**❌ 禁止例**
+```csharp
+// CreateGameUseCase.cs
+private static string GenerateGameId()
+{
+    return Random.Shared.Next(100000, 999999).ToString();
+}
+
+private static string GeneratePlayerId()
+{
+    return Guid.NewGuid().ToString("N")[..12];
+}
+
+// Player.cs
+private static string GeneratePlayerId()
+{
+    return Guid.NewGuid().ToString("N")[..12];
+}
+```
+
+**✅ 推奨例**
+```csharp
+// CreateGameUseCase.cs
+var gameId = GameId.NewId();
+var playerId = PlayerId.NewId();
+
+// Player.cs
+public static Player CreateInitial(PlayerName name)
+{
+    var id = PlayerId.NewId();
+    return new Player(id, name, PlayerStatus.NotReady, false, false);
+}
+```
+
+#### 2. ValueObjectのNewId()メソッド実装
+```csharp
+public sealed class GameId : IEquatable<GameId>
+{
+    /// <summary>
+    /// 新しいGameIdを生成します（GUID）
+    /// </summary>
+    public static GameId NewId()
+    {
+        return new GameId(Guid.NewGuid().ToString());
+    }
+}
+
+public sealed class PlayerId : IEquatable<PlayerId>
+{
+    /// <summary>
+    /// 新しいPlayerIdを生成します（GUID）
+    /// </summary>
+    public static PlayerId NewId()
+    {
+        return new PlayerId(Guid.NewGuid().ToString());
+    }
+}
+```
+
+#### 3. 理由
+- **責務分離**: ID生成ロジックが一箇所に集約される
+- **保守性**: ID生成方式の変更が容易
+- **テスト容易性**: ID生成のテストがValueObject側で完結
+- **一貫性**: 同じ種類のIDが同じ方式で生成される
+- **重複排除**: 同じ処理のコピーが発生しない
+
+#### 4. 実装チェックリスト
+- [ ] ValueObjectに`NewId()`メソッドが実装されている
+- [ ] エンティティやユースケースで独自のID生成ロジックがない
+- [ ] すべてのID生成箇所で`ValueObject.NewId()`を使用している
+- [ ] ID生成方式がドキュメント化されている
+
+## ValueObjectの設計・実装ルール（責務分離・ID生成）
+
+### 1. 識別子（ID）生成の責務はValueObject側に集約する
+- GameIdやPlayerIdなど、エンティティの一意性を担保するIDの生成（例：GUID）は、ValueObject側のファクトリメソッド（例：NewId）で行うこと。
+- エンティティや集約ルートのコンストラクタ・ファクトリでは、ID生成処理を直接書かず、必ずValueObjectの生成メソッドを呼び出すこと。
+- 例：
+  ```csharp
+  var gameId = GameId.NewId();
+  var playerId = PlayerId.NewId();
+  ```
+- これにより、ID生成の実装が一箇所に集約され、ドメイン層の責務分離・保守性・テスト容易性が向上する。
+
+### 2. ValueObjectの責務
+- 値の妥当性検証（null/空文字/範囲チェック等）はValueObjectのコンストラクタやファクトリで必ず行うこと。
+- 生成・変換・パースなど、値に関するロジックはValueObject側に集約する。
+
+### 3. エンティティ/集約ルートの責務
+- IDや値オブジェクトの生成はValueObject側に委譲し、エンティティ/集約ルートは「集約の構成・状態遷移・ビジネスルール」に集中すること。
+
 ---
+
+（例：GameId/PlayerIdのID生成責務分離、値検証の一元化など）
+
+---
+
+### オブジェクトの状態判断のルール
+
+#### 1. オブジェクトの状態判断はドメインの言葉で表現する
+- **❌ 禁止**: プロパティの値を直接参照して条件判断
+- **✅ 推奨**: ドメインの意図を表現するメソッドを使用
+
+**❌ 禁止例**
+```csharp
+// プロパティの値を直接参照
+if (game.Status == GameStatus.Waiting)
+    throw new InvalidOperationException("ゲームは既に開始されています");
+
+if (!Players.All(p => p.IsReady))
+    throw new InvalidOperationException("全てのプレイヤーが準備完了状態である必要があります");
+
+if (Players.Count < 2)
+    throw new InvalidOperationException("ゲームを開始するには最低2人のプレイヤーが必要です");
+```
+
+**✅ 推奨例**
+```csharp
+// ドメインの意図を表現するメソッド
+if (game.IsAlreadyStarted())
+    throw new InvalidOperationException("ゲームは既に開始されています");
+
+if (!game.AreAllPlayersReady())
+    throw new InvalidOperationException("全てのプレイヤーが準備完了状態である必要があります");
+
+if (!game.HasMinimumPlayers())
+    throw new InvalidOperationException("ゲームを開始するには最低2人のプレイヤーが必要です");
+```
+
+#### 2. 状態判断メソッドの命名規則
+- **Is○○**: 状態の確認（例：`IsReady`, `IsDrawer`, `IsGameStarted`）
+- **Has○○**: 存在・所有の確認（例：`HasMinimumPlayers`, `HasAnswer`）
+- **Can○○**: 可能・許可の確認（例：`CanStartGame`, `CanAddPlayer`）
+- **Are○○**: 複数要素の状態確認（例：`AreAllPlayersReady`）
+
+#### 3. 実装例
+```csharp
+public sealed class Game
+{
+    public GameStatus Status { get; private set; }
+    public IReadOnlyList<Player> Players { get; private set; }
+    
+    // ドメインの意図を表現するメソッド
+    public bool IsAlreadyStarted() => Status != GameStatus.Waiting;
+    public bool AreAllPlayersReady() => Players.All(p => p.IsReady);
+    public bool HasMinimumPlayers() => Players.Count >= 2;
+    public bool CanStartGame() => Status == GameStatus.Waiting && 
+                                  Players.Count >= 2 && 
+                                  Players.All(p => p.IsReady);
+    public bool CanAddPlayer() => Status == GameStatus.Waiting && 
+                                  Players.Count < Settings.PlayerCount;
+}
+```
+
+#### 4. 理由
+- **可読性**: ドメインの意図が明確に伝わる
+- **保守性**: 条件ロジックの変更が容易
+- **カプセル化**: オブジェクトの内部実装に依存しない
+- **DDD準拠**: ドメインの言葉でビジネスルールを表現
+
+#### 5. 実装チェックリスト
+- [ ] プロパティの値を直接参照した条件判断がない
+- [ ] 状態判断は`Is○○`, `Has○○`, `Can○○`, `Are○○`メソッドを使用
+- [ ] メソッド名がドメインの意図を表現している
+- [ ] 複雑な条件は適切にメソッドに分割されている
+
+---
+
+### オブジェクト比較のルール
+
+#### 1. エンティティ・値オブジェクトの比較は適切なレベルで行う
+- **❌ 禁止**: 不適切なレベルでの比較
+- **✅ 推奨**: 意図に応じた適切なレベルでの比較
+
+**❌ 禁止例**
+```csharp
+// プレイヤーの重複チェックでID比較を使用
+if (Players.Any(p => p.Id.Equals(player.Id)))
+    throw new InvalidOperationException("このプレイヤーは既に参加しています");
+```
+
+**✅ 推奨例**
+```csharp
+// プレイヤーの重複チェックはプレイヤー全体で比較
+if (Players.Any(p => p.Equals(player)))
+    throw new InvalidOperationException("このプレイヤーは既に参加しています");
+
+// プレイヤー検索はID比較が適切
+var playerIndex = Players.ToList().FindIndex(p => p.Id.Equals(playerId));
+```
+
+#### 2. 比較レベルの使い分け
+- **プレイヤー全体の比較**: 重複チェック、存在確認
+- **ID比較**: プレイヤー検索、描画者判定、状態更新
+
+#### 3. 理由
+- **意図の明確性**: 何を比較したいかが明確になる
+- **保守性**: 比較ロジックの変更が容易
+- **DDD準拠**: ドメインの意図に沿った比較
+
+---
+
+## ValueObjectの設計・実装ルール（責務分離・ID生成）
+
+### 1. 識別子（ID）生成の責務はValueObject側に集約する
+- GameIdやPlayerIdなど、エンティティの一意性を担保するIDの生成（例：GUID）は、ValueObject側のファクトリメソッド（例：NewId）で行うこと。
+- エンティティや集約ルートのコンストラクタ・ファクトリでは、ID生成処理を直接書かず、必ずValueObjectの生成メソッドを呼び出すこと。
+- 例：
+  ```csharp
+  var gameId = GameId.NewId();
+  var playerId = PlayerId.NewId();
+  ```
+- これにより、ID生成の実装が一箇所に集約され、ドメイン層の責務分離・保守性・テスト容易性が向上する。
+
+### 2. ValueObjectの責務
+- 値の妥当性検証（null/空文字/範囲チェック等）はValueObjectのコンストラクタやファクトリで必ず行うこと。
+- 生成・変換・パースなど、値に関するロジックはValueObject側に集約する。
+
+### 3. エンティティ/集約ルートの責務
+- IDや値オブジェクトの生成はValueObject側に委譲し、エンティティ/集約ルートは「集約の構成・状態遷移・ビジネスルール」に集中すること。
+
+---
+
+（例：GameId/PlayerIdのID生成責務分離、値検証の一元化など）
+
+---
+
+### 時間に関するルール
+
+#### 1. ドメイン層での時間取得は禁止
+- **❌ 禁止**: ドメイン層で`DateTime.UtcNow`を直接使用
+- **✅ 推奨**: 時間をパラメータで受け取る
+
+**❌ 禁止例**
+```csharp
+// ドメイン層で直接時間を取得
+public void AddPlayer(Player player)
+{
+    // ... 処理 ...
+    UpdatedAt = DateTime.UtcNow; // ❌ 禁止
+}
+```
+
+**✅ 推奨例**
+```csharp
+// 時間をパラメータで受け取る
+public void AddPlayer(Player player, DateTime now)
+{
+    // ... 処理 ...
+    UpdatedAt = now; // ✅ 推奨
+}
+```
+
+#### 2. 理由
+- **テスト容易性**: 固定時間でのテストが可能
+- **依存性分離**: ドメイン層がインフラ層に依存しない
+- **DDD準拠**: ドメイン層は純粋なビジネスロジックに集中
+- **決定論**: 同じ入力に対して同じ結果が保証される
+
+#### 3. 実装パターン
+- **Application層**: `DateTime.UtcNow`を取得してドメインに渡す
+- **Domain層**: 時間をパラメータで受け取り、ビジネスロジックに使用
+- **テスト**: 固定時間を使用してテストの再現性を確保
+
+#### 4. 影響を受けるメソッド
+- `Game.AddPlayer(Player player, DateTime now)`
+- `Game.StartGame(DateTime now)`
+- `Game.EndGame(DateTime now)`
+- `Game.AddScoreHistory(ScoreHistory scoreHistory, DateTime now)`
+- `Game.UpdatePlayerReadyStatus(PlayerId playerId, bool isReady, DateTime now)`
+
+---
+
+## ValueObjectの設計・実装ルール（責務分離・ID生成）
+
+### 1. 識別子（ID）生成の責務はValueObject側に集約する
+- GameIdやPlayerIdなど、エンティティの一意性を担保するIDの生成（例：GUID）は、ValueObject側のファクトリメソッド（例：NewId）で行うこと。
+- エンティティや集約ルートのコンストラクタ・ファクトリでは、ID生成処理を直接書かず、必ずValueObjectの生成メソッドを呼び出すこと。
+- 例：
+  ```csharp
+  var gameId = GameId.NewId();
+  var playerId = PlayerId.NewId();
+  ```
+- これにより、ID生成の実装が一箇所に集約され、ドメイン層の責務分離・保守性・テスト容易性が向上する。
+
+### 2. ValueObjectの責務
+- 値の妥当性検証（null/空文字/範囲チェック等）はValueObjectのコンストラクタやファクトリで必ず行うこと。
+- 生成・変換・パースなど、値に関するロジックはValueObject側に集約する。
+
+### 3. エンティティ/集約ルートの責務
+- IDや値オブジェクトの生成はValueObject側に委譲し、エンティティ/集約ルートは「集約の構成・状態遷移・ビジネスルール」に集中すること。
+
+---
+
+（例：GameId/PlayerIdのID生成責務分離、値検証の一元化など）
+
+---
+
+### エラーハンドリングのルール
+
+#### 1. ドメインエラーはDomainErrorExceptionを使用する
+- **❌ 禁止**: 汎用的な例外（ArgumentException、InvalidOperationException）を使用
+- **✅ 推奨**: ドメイン固有のDomainErrorExceptionを使用
+
+**❌ 禁止例**
+```csharp
+// 汎用的な例外を使用
+if (timeLimit < 30)
+    throw new ArgumentException("制限時間は30秒以上である必要があります", nameof(timeLimit));
+
+if (Status != GameStatus.Waiting)
+    throw new InvalidOperationException("ゲームは既に開始されています");
+```
+
+**✅ 推奨例**
+```csharp
+// ドメイン固有の例外を使用
+if (timeLimit < 30)
+    throw new DomainErrorException(DomainErrorCodes.GameSettings.InvalidTimeLimit, "制限時間は30秒以上である必要があります");
+
+if (Status != GameStatus.Waiting)
+    throw new DomainErrorException(DomainErrorCodes.Game.AlreadyStarted, "ゲームは既に開始されています");
+```
+
+#### 2. エラーコードは一箇所に定義する
+- **❌ 禁止**: エラーコードを複数箇所に分散
+- **✅ 推奨**: `DomainErrorCodes`クラスに一括定義
+
+**✅ 推奨例**
+```csharp
+public static class DomainErrorCodes
+{
+    public static class Game
+    {
+        public const string NotFound = "GAME_NOT_FOUND";
+        public const string AlreadyStarted = "GAME_ALREADY_STARTED";
+        public const string InsufficientPlayers = "GAME_INSUFFICIENT_PLAYERS";
+    }
+    
+    public static class GameSettings
+    {
+        public const string InvalidTimeLimit = "GAME_SETTINGS_INVALID_TIME_LIMIT";
+        public const string InvalidPlayerCount = "GAME_SETTINGS_INVALID_PLAYER_COUNT";
+    }
+}
+```
+
+#### 3. テストではエラーコードを検証する
+- **❌ 禁止**: 例外の型のみを検証
+- **✅ 推奨**: エラーコードとメッセージを検証
+
+**❌ 禁止例**
+```csharp
+// 例外の型のみを検証
+var exception = Assert.Throws<DomainErrorException>(() => game.StartGame(now));
+// エラーコードが意図したものか不明
+```
+
+**✅ 推奨例**
+```csharp
+// エラーコードとメッセージを検証
+var exception = Assert.Throws<DomainErrorException>(() => game.StartGame(now));
+Assert.Equal(DomainErrorCodes.Game.AlreadyStarted, exception.ErrorCode);
+Assert.Equal("ゲームは既に開始されています", exception.ErrorMessage);
+```
+
+#### 4. エラーコードの命名規則
+- **形式**: `{エンティティ}_{エラー種別}`
+- **例**: `GAME_NOT_FOUND`, `PLAYER_INVALID_NAME`, `TURN_ALREADY_ENDED`
+
+#### 5. 理由
+- **テスト容易性**: 意図したエラーパスに入ったかどうかを正確に検証可能
+- **保守性**: エラーコードによる明確な分類
+- **国際化対応**: エラーコードとメッセージの分離
+- **ログ分析**: エラーコードによる統計分析が可能
+
+#### 6. 実装チェックリスト
+- [ ] DomainErrorExceptionを使用しているか
+- [ ] エラーコードがDomainErrorCodesに定義されているか
+- [ ] テストでエラーコードを検証しているか
+- [ ] エラーコードの命名が統一されているか
+- [ ] エラーメッセージが適切か
 

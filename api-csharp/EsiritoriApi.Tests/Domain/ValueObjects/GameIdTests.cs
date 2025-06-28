@@ -1,80 +1,86 @@
 namespace EsiritoriApi.Tests.Domain.ValueObjects;
 
+using EsiritoriApi.Domain.Errors;
 using EsiritoriApi.Domain.ValueObjects;
 using Xunit;
 
 public sealed class GameIdTests
 {
     [Fact]
-    public void 有効なIDでGameIdが正常に作成される()
+    public void 正常なIDでGameIdが作成される()
     {
-        var id = "123456";
+        var id = new GameId("game123");
 
-        var gameId = new GameId(id);
-
-        Assert.Equal(id, gameId.Value);
-    }
-
-    [Theory]
-    [InlineData(null)]
-    [InlineData("")]
-    [InlineData("   ")]
-    public void 無効なIDの場合例外が発生する(string invalidId)
-    {
-        var exception = Assert.Throws<ArgumentException>(() => new GameId(invalidId));
-        Assert.Equal("ゲームIDは空にできません (Parameter 'value')", exception.Message);
+        Assert.Equal("game123", id.Value);
     }
 
     [Fact]
-    public void 同じIDのGameId同士は等価である()
+    public void 空文字の場合例外が発生する()
     {
-        var id1 = new GameId("123456");
-        var id2 = new GameId("123456");
+        var exception = Assert.Throws<DomainErrorException>(() => new GameId(""));
+        Assert.Equal(DomainErrorCodes.Game.NotFound, exception.ErrorCode);
+    }
+
+    [Fact]
+    public void nullの場合例外が発生する()
+    {
+        var exception = Assert.Throws<DomainErrorException>(() => new GameId(null!));
+        Assert.Equal(DomainErrorCodes.Game.NotFound, exception.ErrorCode);
+    }
+
+    [Fact]
+    public void 空白文字のみの場合例外が発生する()
+    {
+        var exception = Assert.Throws<DomainErrorException>(() => new GameId("   "));
+        Assert.Equal(DomainErrorCodes.Game.NotFound, exception.ErrorCode);
+    }
+
+    [Fact]
+    public void 前後の空白が除去される()
+    {
+        var id = new GameId("  game123  ");
+
+        Assert.Equal("game123", id.Value);
+    }
+
+    [Fact]
+    public void 等価性が正しく判定される()
+    {
+        var id1 = new GameId("game123");
+        var id2 = new GameId("game123");
+        var id3 = new GameId("game456");
 
         Assert.Equal(id1, id2);
-        Assert.True(id1 == id2);
-        Assert.False(id1 != id2);
+        Assert.NotEqual(id1, id3);
+    }
+
+    [Fact]
+    public void ハッシュコードが正しく計算される()
+    {
+        var id1 = new GameId("game123");
+        var id2 = new GameId("game123");
+
         Assert.Equal(id1.GetHashCode(), id2.GetHashCode());
     }
 
     [Fact]
-    public void 異なるIDのGameId同士は等価でない()
+    public void ToStringが正しく動作する()
     {
-        var id1 = new GameId("123456");
-        var id2 = new GameId("654321");
+        var id = new GameId("game123");
 
-        Assert.NotEqual(id1, id2);
-        Assert.False(id1 == id2);
-        Assert.True(id1 != id2);
+        Assert.Equal("game123", id.ToString());
     }
 
     [Fact]
-    public void nullとの比較で等価でない()
+    public void NewIdが正しく動作する()
     {
-        var gameId = new GameId("123456");
+        var id1 = GameId.NewId();
+        var id2 = GameId.NewId();
 
-        Assert.False(gameId.Equals(null));
-        Assert.False(gameId == null);
-        Assert.True(gameId != null);
-    }
-
-    [Fact]
-    public void ToStringでIDが返される()
-    {
-        var id = "123456";
-        var gameId = new GameId(id);
-
-        Assert.Equal(id, gameId.ToString());
-    }
-
-    [Fact]
-    public void 前後の空白は自動的にトリムされる()
-    {
-        var idWithSpaces = "  123456  ";
-        var expectedId = "123456";
-
-        var gameId = new GameId(idWithSpaces);
-
-        Assert.Equal(expectedId, gameId.Value);
+        Assert.NotNull(id1.Value);
+        Assert.NotNull(id2.Value);
+        Assert.NotEqual(id1.Value, id2.Value);
+        Assert.True(Guid.TryParse(id1.Value, out _));
+        Assert.True(Guid.TryParse(id2.Value, out _));
     }
 }

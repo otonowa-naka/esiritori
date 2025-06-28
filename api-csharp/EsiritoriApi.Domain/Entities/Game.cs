@@ -2,225 +2,202 @@ namespace EsiritoriApi.Domain.Entities;
 
 using EsiritoriApi.Domain.ValueObjects;
 using EsiritoriApi.Domain.Entities;
+using EsiritoriApi.Domain.Errors;
 
+/// <summary>
+/// ゲームの状態を表す列挙型
+/// </summary>
 public enum GameStatus
 {
+    /// <summary>待機中</summary>
     Waiting,
+    /// <summary>プレイ中</summary>
     Playing,
+    /// <summary>終了</summary>
     Finished
 }
 
+/// <summary>
+/// しりとりゲームの集約ルートエンティティ
+/// </summary>
 public sealed class Game : IEquatable<Game>
 {
-    public GameId Id { get; }
-    public GameStatus Status { get; }
-    public GameSettings Settings { get; }
-    public Round CurrentRound { get; }
-    public IReadOnlyList<Player> Players { get; }
-    public IReadOnlyList<ScoreHistory> ScoreHistories { get; }
-    public DateTime CreatedAt { get; }
-    public DateTime UpdatedAt { get; }
+    /// <summary>ゲームID</summary>
+    public GameId Id { get; private set; }
+    /// <summary>ゲーム状態</summary>
+    public GameStatus Status { get; private set; }
+    /// <summary>ゲーム設定</summary>
+    public GameSettings Settings { get; private set; }
+    /// <summary>現在のラウンド</summary>
+    public Round CurrentRound { get; private set; }
+    /// <summary>参加プレイヤー一覧</summary>
+    public IReadOnlyList<Player> Players { get; private set; }
+    /// <summary>スコア履歴</summary>
+    public IReadOnlyList<ScoreHistory> ScoreHistories { get; private set; }
+    /// <summary>作成日時</summary>
+    public DateTime CreatedAt { get; private set; }
+    /// <summary>更新日時</summary>
+    public DateTime UpdatedAt { get; private set; }
 
-    public Game(GameId id, GameSettings settings, PlayerName creatorName, PlayerId creatorId,
-                GameStatus status = GameStatus.Waiting, Round? currentRound = null,
-                IEnumerable<Player>? players = null, IEnumerable<ScoreHistory>? scoreHistories = null,
-                DateTime? createdAt = null, DateTime? updatedAt = null)
+    /// <summary>
+    /// ゲームの新しいインスタンスを作成します
+    /// </summary>
+    public Game(GameId id, GameSettings settings,
+                GameStatus status, Round currentRound,
+                IEnumerable<Player> players, IEnumerable<ScoreHistory> scoreHistories,
+                DateTime createdAt, DateTime updatedAt)
     {
         Id = id ?? throw new ArgumentNullException(nameof(id));
         Settings = settings ?? throw new ArgumentNullException(nameof(settings));
         Status = status;
-        ScoreHistories = scoreHistories?.ToList().AsReadOnly() ?? new List<ScoreHistory>().AsReadOnly();
-        CreatedAt = createdAt ?? DateTime.UtcNow;
-        UpdatedAt = updatedAt ?? DateTime.UtcNow;
-
-        if (players != null)
-        {
-            Players = players.ToList().AsReadOnly();
-        }
-        else
-        {
-            var creator = new Player(creatorId, creatorName, PlayerStatus.NotReady, false, false);
-            Players = new List<Player> { creator }.AsReadOnly();
-        }
-
-        if (currentRound != null)
-        {
-            CurrentRound = currentRound;
-        }
-        else
-        {
-            var initialTurn = Turn.CreateInitial(creatorId, settings.TimeLimit);
-            CurrentRound = Round.CreateInitial(initialTurn, DateTime.UtcNow);
-        }
+        CurrentRound = currentRound ?? throw new ArgumentNullException(nameof(currentRound));
+        Players = players?.ToList().AsReadOnly() ?? throw new ArgumentNullException(nameof(players));
+        if (!Players.Any()) throw new ArgumentException("初期プレイヤーが必要です", nameof(players));
+        ScoreHistories = scoreHistories?.ToList().AsReadOnly() ?? throw new ArgumentNullException(nameof(scoreHistories));
+        CreatedAt = createdAt;
+        UpdatedAt = updatedAt;
     }
 
-    public Game AddPlayer(PlayerId playerId, PlayerName playerName)
+    /// <summary>
+    /// プレイヤーを追加します
+    /// </summary>
+    public void AddPlayer(Player player, DateTime now)
     {
         if (Status != GameStatus.Waiting)
-        {
-            throw new InvalidOperationException("ゲームが開始されているため、プレイヤーを追加できません");
-        }
-
+            throw new DomainErrorException(DomainErrorCodes.Game.CannotAddPlayerAfterStart, "ゲームが開始されているため、プレイヤーを追加できません");
         if (Players.Count >= Settings.PlayerCount)
-        {
-            throw new InvalidOperationException("ゲームが満員です");
-        }
+            throw new DomainErrorException(DomainErrorCodes.Game.PlayerLimitExceeded, "ゲームが満員です");
+        if (Players.Any(p => p.Equals(player)))
+            throw new DomainErrorException(DomainErrorCodes.Game.PlayerAlreadyJoined, "このプレイヤーは既に参加しています");
 
-        if (Players.Any(p => p.Id.Equals(playerId)))
-        {
-            throw new InvalidOperationException("このプレイヤーは既に参加しています");
-        }
-
-        var newPlayer = new Player(playerId, playerName, PlayerStatus.NotReady, false, false);
         var updatedPlayers = Players.ToList();
-        updatedPlayers.Add(newPlayer);
-
-        return new Game(
-            Id,
-            Settings,
-            Players.First().Name,
-            Players.First().Id,
-            Status,
-            CurrentRound,
-            updatedPlayers,
-            ScoreHistories,
-            CreatedAt,
-            DateTime.UtcNow
-        );
+        updatedPlayers.Add(player);
+        Players = updatedPlayers.AsReadOnly();
+        UpdatedAt = now;
     }
 
-    public Game StartGame()
+    /// <summary>
+    /// ゲームを開始します
+    /// </summary>
+    public void StartGame(DateTime now)
     {
         if (Status != GameStatus.Waiting)
-        {
-            throw new InvalidOperationException("ゲームは既に開始されています");
-        }
-
+            throw new DomainErrorException(DomainErrorCodes.Game.AlreadyStarted, "ゲームは既に開始されています");
         if (Players.Count < 2)
-        {
-            throw new InvalidOperationException("ゲームを開始するには最低2人のプレイヤーが必要です");
-        }
-
+            throw new DomainErrorException(DomainErrorCodes.Game.InsufficientPlayers, "ゲームを開始するには最低2人のプレイヤーが必要です");
         if (!Players.All(p => p.IsReady))
-        {
-            throw new InvalidOperationException("全てのプレイヤーが準備完了状態である必要があります");
-        }
+            throw new DomainErrorException(DomainErrorCodes.Game.NotAllPlayersReady, "全てのプレイヤーが準備完了状態である必要があります");
 
+        // 最初の描画者を選ぶ
         var firstDrawer = Players.First();
-        var updatedRound = CurrentRound;
-
         var updatedPlayers = Players.Select(p =>
-            p.Id.Equals(firstDrawer.Id) 
+            p.Id.Equals(firstDrawer.Id)
                 ? new Player(p.Id, p.Name, p.Status, p.IsReady, true)
                 : new Player(p.Id, p.Name, p.Status, p.IsReady, false)
         ).ToList();
-
-        return new Game(
-            Id,
-            Settings,
-            Players.First().Name,
-            Players.First().Id,
-            GameStatus.Playing,
-            updatedRound,
-            updatedPlayers,
-            ScoreHistories,
-            CreatedAt,
-            DateTime.UtcNow
-        );
+        Players = updatedPlayers.AsReadOnly();
+        
+        // 新規Roundを作成（最初の描画者で初期Turnを作成）
+        var initialTurn = Turn.CreateInitial(firstDrawer.Id, Settings.TimeLimit);
+        var newRound = Round.CreateInitial(initialTurn, now);
+        CurrentRound = newRound;
+        
+        Status = GameStatus.Playing;
+        UpdatedAt = now;
     }
 
-    public Game EndGame()
+    /// <summary>
+    /// ゲームを終了します
+    /// </summary>
+    public void EndGame(DateTime now)
     {
         if (Status == GameStatus.Finished)
-        {
-            throw new InvalidOperationException("ゲームは既に終了しています");
-        }
-
-        var updatedRound = CurrentRound;
-
-        return new Game(
-            Id,
-            Settings,
-            Players.First().Name,
-            Players.First().Id,
-            GameStatus.Finished,
-            updatedRound,
-            Players,
-            ScoreHistories,
-            CreatedAt,
-            DateTime.UtcNow
-        );
+            throw new DomainErrorException(DomainErrorCodes.Game.AlreadyEnded, "ゲームは既に終了しています");
+        Status = GameStatus.Finished;
+        UpdatedAt = now;
     }
 
-    public Game AddScoreHistory(ScoreHistory scoreHistory)
+    /// <summary>
+    /// スコア履歴を追加します
+    /// </summary>
+    public void AddScoreHistory(ScoreHistory scoreHistory, DateTime now)
     {
         var updatedScoreHistories = ScoreHistories.ToList();
         updatedScoreHistories.Add(scoreHistory);
-
-        return new Game(
-            Id,
-            Settings,
-            Players.First().Name,
-            Players.First().Id,
-            Status,
-            CurrentRound,
-            Players,
-            updatedScoreHistories,
-            CreatedAt,
-            DateTime.UtcNow
-        );
+        ScoreHistories = updatedScoreHistories.AsReadOnly();
+        UpdatedAt = now;
     }
 
-    public Game UpdatePlayerReadyStatus(PlayerId playerId, bool isReady)
+    /// <summary>
+    /// プレイヤーの準備状態を更新します
+    /// </summary>
+    public void UpdatePlayerReadyStatus(PlayerId playerId, bool isReady, DateTime now)
     {
         var playerIndex = Players.ToList().FindIndex(p => p.Id.Equals(playerId));
         if (playerIndex == -1)
-        {
-            throw new InvalidOperationException("プレイヤーが見つかりません");
-        }
-
+            throw new DomainErrorException(DomainErrorCodes.Game.PlayerNotFound, "プレイヤーが見つかりません");
         var updatedPlayers = Players.ToList();
         var currentPlayer = updatedPlayers[playerIndex];
         updatedPlayers[playerIndex] = new Player(currentPlayer.Id, currentPlayer.Name, currentPlayer.Status, isReady, currentPlayer.IsDrawer);
-
-        return new Game(
-            Id,
-            Settings,
-            Players.First().Name,
-            Players.First().Id,
-            Status,
-            CurrentRound,
-            updatedPlayers,
-            ScoreHistories,
-            CreatedAt,
-            DateTime.UtcNow
-        );
+        Players = updatedPlayers.AsReadOnly();
+        UpdatedAt = now;
     }
 
+    /// <summary>
+    /// 新規ゲームを作成するファクトリメソッド
+    /// </summary>
+    /// <param name="id">ゲームID</param>
+    /// <param name="settings">ゲーム設定</param>
+    /// <param name="initialPlayer">初期プレイヤー</param>
+    /// <param name="createdAt">作成日時</param>
+    /// <returns>新規作成されたGameインスタンス</returns>
+    public static Game CreateNew(GameId id, GameSettings settings, Player initialPlayer, DateTime createdAt)
+    {
+        var players = new List<Player> { initialPlayer };
+        var initialTurn = Turn.CreateInitial(initialPlayer.Id, settings.TimeLimit);
+        var initialRound = Round.CreateInitial(initialTurn, createdAt);
+        return new Game(id, settings, GameStatus.Waiting, initialRound, players, new List<ScoreHistory>(), createdAt, createdAt);
+    }
 
-
+    #region 等価性・演算子
+    /// <summary>
+    /// 他のゲームと等価かどうかを判定します
+    /// </summary>
     public bool Equals(Game? other)
     {
         return other is not null && Id.Equals(other.Id);
     }
 
+    /// <summary>
+    /// 他のオブジェクトと等価かどうかを判定します
+    /// </summary>
     public override bool Equals(object? obj)
     {
         return Equals(obj as Game);
     }
 
+    /// <summary>
+    /// ハッシュコードを取得します
+    /// </summary>
     public override int GetHashCode()
     {
         return Id.GetHashCode();
     }
 
+    /// <summary>
+    /// 等価演算子
+    /// </summary>
     public static bool operator ==(Game? left, Game? right)
     {
         return EqualityComparer<Game>.Default.Equals(left, right);
     }
 
+    /// <summary>
+    /// 不等価演算子
+    /// </summary>
     public static bool operator !=(Game? left, Game? right)
     {
         return !(left == right);
     }
+    #endregion
 }

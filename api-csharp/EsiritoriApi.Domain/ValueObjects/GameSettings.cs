@@ -1,3 +1,5 @@
+using EsiritoriApi.Domain.Errors;
+
 namespace EsiritoriApi.Domain.ValueObjects;
 
 public sealed class GameSettings : IEquatable<GameSettings>
@@ -10,17 +12,17 @@ public sealed class GameSettings : IEquatable<GameSettings>
     {
         if (timeLimit < 30 || timeLimit > 300)
         {
-            throw new ArgumentException("制限時間は30秒から300秒の間で設定してください", nameof(timeLimit));
+            throw new DomainErrorException(DomainErrorCodes.GameSettings.InvalidTimeLimit, "制限時間は30秒から300秒の間で設定してください");
         }
 
         if (roundCount < 1 || roundCount > 10)
         {
-            throw new ArgumentException("ラウンド数は1から10の間で設定してください", nameof(roundCount));
+            throw new DomainErrorException(DomainErrorCodes.GameSettings.InvalidRoundCount, "ラウンド数は1から10の間で設定してください");
         }
 
         if (playerCount < 2 || playerCount > 8)
         {
-            throw new ArgumentException("プレイヤー数は2人から8人の間で設定してください", nameof(playerCount));
+            throw new DomainErrorException(DomainErrorCodes.GameSettings.InvalidPlayerCount, "プレイヤー数は2人から8人の間で設定してください");
         }
 
         TimeLimit = timeLimit;

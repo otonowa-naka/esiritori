@@ -1,3 +1,5 @@
+using EsiritoriApi.Domain.Errors;
+
 namespace EsiritoriApi.Domain.ValueObjects;
 
 /// <summary>
@@ -63,7 +65,7 @@ public sealed class Turn : IEquatable<Turn>
     /// <param name="startedAt">開始時刻</param>
     /// <param name="endedAt">終了時刻（オプション）</param>
     /// <param name="correctPlayerIds">正解者のプレイヤーIDリスト（オプション）</param>
-    /// <exception cref="ArgumentException">
+    /// <exception cref="DomainErrorException">
     /// ターン番号が1-10の範囲外、制限時間が1-300の範囲外の場合
     /// </exception>
     /// <exception cref="ArgumentNullException">drawerIdがnullの場合</exception>
@@ -72,16 +74,16 @@ public sealed class Turn : IEquatable<Turn>
     {
         if (turnNumber < 1 || turnNumber > 10)
         {
-            throw new ArgumentException("ターン番号は1から10の間で設定してください", nameof(turnNumber));
+            throw new DomainErrorException(DomainErrorCodes.Turn.InvalidTurnNumber, "ターン番号は1から10の間で設定してください");
         }
 
         if (timeLimit < 1 || timeLimit > 300)
         {
-            throw new ArgumentException("制限時間は1秒から300秒の間で設定してください", nameof(timeLimit));
+            throw new DomainErrorException(DomainErrorCodes.Turn.InvalidTurnNumber, "制限時間は1秒から300秒の間で設定してください");
         }
 
         TurnNumber = turnNumber;
-        DrawerId = drawerId ?? throw new ArgumentNullException(nameof(drawerId));
+        DrawerId = drawerId ?? throw new DomainErrorException(DomainErrorCodes.Turn.InvalidDrawerId, "描画者IDはnullにできません");
         Answer = answer;
         Status = status;
         TimeLimit = timeLimit;
@@ -137,12 +139,12 @@ public sealed class Turn : IEquatable<Turn>
     {
         if (playerAnswer == null)
         {
-            throw new ArgumentNullException(nameof(playerAnswer));
+            throw new DomainErrorException(DomainErrorCodes.Turn.InvalidTurnNumber, "回答はnullにできません");
         }
 
         if (playerId == null)
         {
-            throw new ArgumentNullException(nameof(playerId));
+            throw new DomainErrorException(DomainErrorCodes.Turn.InvalidDrawerId, "プレイヤーIDはnullにできません");
         }
 
         // 回答が正解かどうかをチェック

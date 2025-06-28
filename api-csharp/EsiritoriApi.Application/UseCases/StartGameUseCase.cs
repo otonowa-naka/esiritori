@@ -5,48 +5,43 @@ using EsiritoriApi.Application.Interfaces;
 using EsiritoriApi.Domain.Entities;
 using EsiritoriApi.Domain.ValueObjects;
 
-public interface ICreateGameUseCase
+public interface IStartGameUseCase
 {
-    Task<CreateGameResponse> ExecuteAsync(CreateGameRequest request, CancellationToken cancellationToken = default);
+    Task<StartGameResponse> ExecuteAsync(StartGameRequest request, CancellationToken cancellationToken = default);
 }
 
-public class CreateGameUseCase : ICreateGameUseCase
+public class StartGameUseCase : IStartGameUseCase
 {
     private readonly IGameRepository _gameRepository;
 
-    public CreateGameUseCase(IGameRepository gameRepository)
+    public StartGameUseCase(IGameRepository gameRepository)
     {
         _gameRepository = gameRepository ?? throw new ArgumentNullException(nameof(gameRepository));
     }
 
-    public async Task<CreateGameResponse> ExecuteAsync(CreateGameRequest request, CancellationToken cancellationToken = default)
+    public async Task<StartGameResponse> ExecuteAsync(StartGameRequest request, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(request);
 
-        var gameId = GameId.NewId();
-        var playerId = PlayerId.NewId();
-        var creatorName = new PlayerName(request.CreatorName);
-        var settings = new GameSettings(
-            request.Settings.TimeLimit,
-            request.Settings.RoundCount,
-            request.Settings.PlayerCount
-        );
+        var gameId = new GameId(request.GameId);
+        var game = await _gameRepository.FindByIdAsync(gameId, cancellationToken);
+        
+        if (game == null)
+        {
+            throw new InvalidOperationException("指定されたゲームが見つかりません");
+        }
 
-        var creator = new Player(playerId, creatorName, PlayerStatus.NotReady, false, false);
-        var initialTurn = Turn.CreateInitial(creator.Id, settings.TimeLimit);
-        var initialRound = Round.CreateInitial(initialTurn, DateTime.UtcNow);
-        var game = new Game(gameId, settings, GameStatus.Waiting, initialRound, new[] { creator }, new List<ScoreHistory>(), DateTime.UtcNow, DateTime.UtcNow);
+        // ゲームを開始し、新規Roundを作成
+        game.StartGame(DateTime.UtcNow);
 
         await _gameRepository.SaveAsync(game, cancellationToken);
 
         return MapToResponse(game);
     }
 
-    private static CreateGameResponse MapToResponse(Game game)
+    private static StartGameResponse MapToResponse(Game game)
     {
-        var creator = game.Players.First();
-
-        return new CreateGameResponse
+        return new StartGameResponse
         {
             Game = new GameDto
             {
@@ -85,14 +80,7 @@ public class CreateGameUseCase : ICreateGameUseCase
                     Reason = score.Reason.ToString(),
                     Timestamp = score.Timestamp
                 }).ToList()
-            },
-            Player = new PlayerDto
-            {
-                Id = creator.Id.Value,
-                Name = creator.Name.Value,
-                IsReady = creator.IsReady,
-                IsDrawer = creator.IsDrawer
             }
         };
     }
-}
+} 

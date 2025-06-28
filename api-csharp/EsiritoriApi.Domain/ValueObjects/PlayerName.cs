@@ -1,3 +1,5 @@
+using EsiritoriApi.Domain.Errors;
+
 namespace EsiritoriApi.Domain.ValueObjects;
 
 public sealed class PlayerName : IEquatable<PlayerName>
@@ -8,12 +10,12 @@ public sealed class PlayerName : IEquatable<PlayerName>
     {
         if (string.IsNullOrWhiteSpace(value))
         {
-            throw new ArgumentException("プレイヤー名は空にできません", nameof(value));
+            throw new DomainErrorException(DomainErrorCodes.Player.InvalidName, "プレイヤー名は空にできません");
         }
 
         if (value.Trim().Length > 20)
         {
-            throw new ArgumentException("プレイヤー名は20文字以下である必要があります", nameof(value));
+            throw new DomainErrorException(DomainErrorCodes.Player.InvalidName, "プレイヤー名は20文字以下である必要があります");
         }
 
         Value = value.Trim();

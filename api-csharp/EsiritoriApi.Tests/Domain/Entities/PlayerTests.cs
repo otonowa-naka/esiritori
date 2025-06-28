@@ -27,12 +27,11 @@ public sealed class PlayerTests
     [Fact]
     public void CreateInitialファクトリメソッドでPlayerが正常に作成される()
     {
-        var id = new PlayerId("player123");
         var name = new PlayerName("テストプレイヤー");
 
-        var player = Player.CreateInitial(id, name);
+        var player = Player.CreateInitial(name);
 
-        Assert.Equal(id, player.Id);
+        Assert.NotNull(player.Id);
         Assert.Equal(name, player.Name);
         Assert.Equal(PlayerStatus.NotReady, player.Status);
         Assert.False(player.IsReady);
@@ -42,11 +41,10 @@ public sealed class PlayerTests
     [Fact]
     public void Playerは作成後に不変である()
     {
-        var id = new PlayerId("player123");
         var name = new PlayerName("テストプレイヤー");
-        var player = Player.CreateInitial(id, name);
+        var player = Player.CreateInitial(name);
 
-        Assert.Equal(id, player.Id);
+        Assert.NotNull(player.Id);
         Assert.Equal(name, player.Name);
         Assert.Equal(PlayerStatus.NotReady, player.Status);
         Assert.False(player.IsReady);
@@ -70,11 +68,9 @@ public sealed class PlayerTests
     [Fact]
     public void 異なる値のPlayer同士は等価でない()
     {
-        var id1 = new PlayerId("player123");
-        var id2 = new PlayerId("player456");
         var name = new PlayerName("テストプレイヤー");
-        var player1 = Player.CreateInitial(id1, name);
-        var player2 = Player.CreateInitial(id2, name);
+        var player1 = Player.CreateInitial(name);
+        var player2 = Player.CreateInitial(name);
 
         Assert.NotEqual(player1, player2);
         Assert.False(player1 == player2);
@@ -84,30 +80,36 @@ public sealed class PlayerTests
     [Fact]
     public void nullとの比較で等価でない()
     {
-        var id = new PlayerId("player123");
         var name = new PlayerName("テストプレイヤー");
-        var player = Player.CreateInitial(id, name);
+        var player = Player.CreateInitial(name);
 
         Assert.False(player.Equals(null));
         Assert.False(player == null);
         Assert.True(player != null);
     }
 
-
-
-    [Fact]
-    public void nullIDの場合例外が発生する()
-    {
-        var name = new PlayerName("テストプレイヤー");
-
-        Assert.Throws<ArgumentNullException>(() => Player.CreateInitial(null!, name));
-    }
-
     [Fact]
     public void null名前の場合例外が発生する()
     {
-        var id = new PlayerId("player123");
+        Assert.Throws<ArgumentNullException>(() => Player.CreateInitial(null!));
+    }
 
-        Assert.Throws<ArgumentNullException>(() => Player.CreateInitial(id, null!));
+    [Fact]
+    public void CreateInitialで生成されるIDが一意である()
+    {
+        var name = new PlayerName("テストプレイヤー");
+        var player1 = Player.CreateInitial(name);
+        var player2 = Player.CreateInitial(name);
+
+        Assert.NotEqual(player1.Id, player2.Id);
+    }
+
+    [Fact]
+    public void CreateInitialで生成されるIDがGUID形式である()
+    {
+        var name = new PlayerName("テストプレイヤー");
+        var player = Player.CreateInitial(name);
+
+        Assert.Matches(@"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$", player.Id.Value);
     }
 }

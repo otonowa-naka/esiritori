@@ -10,6 +10,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 
 builder.Services.AddScoped<ICreateGameUseCase, CreateGameUseCase>();
+builder.Services.AddScoped<IStartGameUseCase, StartGameUseCase>();
 builder.Services.AddSingleton<IGameRepository, InMemoryGameRepository>();
 
 builder.Services.AddEndpointsApiExplorer();

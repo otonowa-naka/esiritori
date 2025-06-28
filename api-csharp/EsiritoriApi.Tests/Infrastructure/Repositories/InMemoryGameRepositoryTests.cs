@@ -7,6 +7,17 @@ using Xunit;
 
 public sealed class InMemoryGameRepositoryTests
 {
+    private static Game CreateTestGame(string gameId, string creatorName, string? creatorId = null)
+    {
+        var id = new GameId(gameId);
+        var settings = new GameSettings(60, 3, 4);
+        var playerId = creatorId ?? $"player_{gameId}";
+        var creator = new Player(new PlayerId(playerId), new PlayerName(creatorName), PlayerStatus.NotReady, false, false);
+        var initialTurn = Turn.CreateInitial(creator.Id, settings.TimeLimit);
+        var initialRound = Round.CreateInitial(initialTurn, DateTime.UtcNow);
+        return new Game(id, settings, GameStatus.Waiting, initialRound, new[] { creator }, new List<ScoreHistory>(), DateTime.UtcNow, DateTime.UtcNow);
+    }
+
     [Fact]
     public async Task ゲーム保存時_正常に保存される()
     {
@@ -15,7 +26,10 @@ public sealed class InMemoryGameRepositoryTests
         var settings = new GameSettings(60, 3, 4);
         var creatorName = new PlayerName("テスト作成者");
         var creatorId = new PlayerId("creator123");
-        var game = new Game(gameId, settings, creatorName, creatorId);
+        var creator = new Player(creatorId, creatorName, PlayerStatus.NotReady, false, false);
+        var initialTurn = Turn.CreateInitial(creator.Id, settings.TimeLimit);
+        var initialRound = Round.CreateInitial(initialTurn, DateTime.UtcNow);
+        var game = new Game(gameId, settings, GameStatus.Waiting, initialRound, new[] { creator }, new List<ScoreHistory>(), DateTime.UtcNow, DateTime.UtcNow);
 
         await repository.SaveAsync(game);
 
@@ -33,7 +47,10 @@ public sealed class InMemoryGameRepositoryTests
         var settings = new GameSettings(60, 3, 4);
         var creatorName = new PlayerName("テスト作成者");
         var creatorId = new PlayerId("creator123");
-        var game = new Game(gameId, settings, creatorName, creatorId);
+        var creator = new Player(creatorId, creatorName, PlayerStatus.NotReady, false, false);
+        var initialTurn = Turn.CreateInitial(creator.Id, settings.TimeLimit);
+        var initialRound = Round.CreateInitial(initialTurn, DateTime.UtcNow);
+        var game = new Game(gameId, settings, GameStatus.Waiting, initialRound, new[] { creator }, new List<ScoreHistory>(), DateTime.UtcNow, DateTime.UtcNow);
         await repository.SaveAsync(game);
 
         var foundGame = await repository.FindByIdAsync(gameId);
@@ -58,8 +75,8 @@ public sealed class InMemoryGameRepositoryTests
     public async Task 全ゲーム取得時_保存されている全ゲームが取得される()
     {
         var repository = new InMemoryGameRepository();
-        var game1 = CreateTestGame("123456", "プレイヤー1");
-        var game2 = CreateTestGame("654321", "プレイヤー2");
+        var game1 = CreateTestGame("123456", "プレイヤー1", "player1");
+        var game2 = CreateTestGame("654321", "プレイヤー2", "player2");
         await repository.SaveAsync(game1);
         await repository.SaveAsync(game2);
 
@@ -85,7 +102,7 @@ public sealed class InMemoryGameRepositoryTests
     {
         var repository = new InMemoryGameRepository();
         var gameId = new GameId("123456");
-        var game = CreateTestGame("123456", "テスト作成者");
+        var game = CreateTestGame("123456", "テスト作成者", "playerX");
         await repository.SaveAsync(game);
 
         await repository.DeleteAsync(gameId);
@@ -109,10 +126,10 @@ public sealed class InMemoryGameRepositoryTests
     {
         var repository = new InMemoryGameRepository();
         var gameId = new GameId("123456");
-        var originalGame = CreateTestGame("123456", "元の作成者");
+        var originalGame = CreateTestGame("123456", "元の作成者", "playerA");
         await repository.SaveAsync(originalGame);
 
-        var updatedGame = CreateTestGame("123456", "更新された作成者");
+        var updatedGame = CreateTestGame("123456", "更新された作成者", "playerB");
 
         await repository.SaveAsync(updatedGame);
 
@@ -126,8 +143,8 @@ public sealed class InMemoryGameRepositoryTests
     public async Task リポジトリクリア時_全てのゲームが削除される()
     {
         var repository = new InMemoryGameRepository();
-        var game1 = CreateTestGame("123456", "プレイヤー1");
-        var game2 = CreateTestGame("654321", "プレイヤー2");
+        var game1 = CreateTestGame("123456", "プレイヤー1", "player1");
+        var game2 = CreateTestGame("654321", "プレイヤー2", "player2");
         await repository.SaveAsync(game1);
         await repository.SaveAsync(game2);
 
@@ -160,12 +177,103 @@ public sealed class InMemoryGameRepositoryTests
         await Assert.ThrowsAsync<ArgumentNullException>(() => repository.DeleteAsync(null!));
     }
 
-    private static Game CreateTestGame(string gameId, string creatorName)
+    [Fact]
+    public async Task ゲームにプレイヤー追加時_正常に追加される()
     {
-        var id = new GameId(gameId);
+        var now = DateTime.UtcNow;
+        var repository = new InMemoryGameRepository();
+        var gameId = new GameId("123456");
         var settings = new GameSettings(60, 3, 4);
-        var name = new PlayerName(creatorName);
-        var playerId = new PlayerId($"player_{gameId}");
-        return new Game(id, settings, name, playerId);
+        var creatorName = new PlayerName("テスト作成者");
+        var creatorId = new PlayerId("creator123");
+        var creator = new Player(creatorId, creatorName, PlayerStatus.NotReady, false, false);
+        var initialTurn = Turn.CreateInitial(creator.Id, settings.TimeLimit);
+        var initialRound = Round.CreateInitial(initialTurn, now);
+        var game = new Game(gameId, settings, GameStatus.Waiting, initialRound, new[] { creator }, new List<ScoreHistory>(), now, now);
+        await repository.SaveAsync(game);
+
+        var newPlayerName = "新しいプレイヤー";
+        var newPlayerId = new PlayerId("newPlayer123");
+        var newPlayer = new Player(newPlayerId, new PlayerName(newPlayerName), PlayerStatus.NotReady, false, false);
+
+        game.AddPlayer(newPlayer, now);
+        Assert.Equal(2, game.Players.Count);
+        Assert.Equal("newPlayer123", game.Players.Last().Id.Value);
+        Assert.Equal("新しいプレイヤー", game.Players.Last().Name.Value);
+    }
+
+    [Fact]
+    public async Task ゲームに既存のプレイヤー追加時_既存のゲームが更新される()
+    {
+        var now = DateTime.UtcNow;
+        var repository = new InMemoryGameRepository();
+        var gameId = new GameId("123456");
+        var settings = new GameSettings(60, 3, 4);
+        var creatorName = new PlayerName("テスト作成者");
+        var creatorId = new PlayerId("creator123");
+        var creator = new Player(creatorId, creatorName, PlayerStatus.NotReady, false, false);
+        var initialTurn = Turn.CreateInitial(creator.Id, settings.TimeLimit);
+        var initialRound = Round.CreateInitial(initialTurn, now);
+        var game = new Game(gameId, settings, GameStatus.Waiting, initialRound, new[] { creator }, new List<ScoreHistory>(), now, now);
+        await repository.SaveAsync(game);
+
+        var newPlayerName = "新しいプレイヤー";
+        var newPlayerId = new PlayerId("newPlayer123");
+        var newPlayer = new Player(newPlayerId, new PlayerName(newPlayerName), PlayerStatus.NotReady, false, false);
+
+        game.AddPlayer(newPlayer, now);
+        Assert.Equal(2, game.Players.Count);
+        Assert.Contains(newPlayerId.Value, game.Players.Select(p => p.Id.Value));
+        Assert.Contains(newPlayerName, game.Players.Select(p => p.Name.Value));
+    }
+
+    [Fact]
+    public async Task ゲームに既存のプレイヤー追加時_既存のゲームが更新される_既存のプレイヤーが既に存在する場合()
+    {
+        var now = DateTime.UtcNow;
+        var repository = new InMemoryGameRepository();
+        var gameId = new GameId("123456");
+        var settings = new GameSettings(60, 3, 4);
+        var creatorName = new PlayerName("テスト作成者");
+        var creatorId = new PlayerId("creator123");
+        var creator = new Player(creatorId, creatorName, PlayerStatus.NotReady, false, false);
+        var initialTurn = Turn.CreateInitial(creator.Id, settings.TimeLimit);
+        var initialRound = Round.CreateInitial(initialTurn, now);
+        var game = new Game(gameId, settings, GameStatus.Waiting, initialRound, new[] { creator }, new List<ScoreHistory>(), now, now);
+        await repository.SaveAsync(game);
+
+        var newPlayerName = "既存のプレイヤー";
+        var newPlayerId = new PlayerId("existingPlayer123");
+        var newPlayer = new Player(newPlayerId, new PlayerName(newPlayerName), PlayerStatus.NotReady, false, false);
+
+        game.AddPlayer(newPlayer, now);
+        Assert.Equal(2, game.Players.Count);
+        Assert.Contains(game.Players, p => p.Id.Value == newPlayerId.Value);
+        Assert.Contains(game.Players, p => p.Name.Value == newPlayerName);
+    }
+
+    [Fact]
+    public async Task ゲームに既存のプレイヤー追加時_既存のゲームが更新される_既存のプレイヤーが既に存在する場合_既存のプレイヤーが既に存在する場合_既存のプレイヤーが既に存在する場合()
+    {
+        var now = DateTime.UtcNow;
+        var repository = new InMemoryGameRepository();
+        var gameId = new GameId("123456");
+        var settings = new GameSettings(60, 3, 4);
+        var creatorName = new PlayerName("テスト作成者");
+        var creatorId = new PlayerId("creator123");
+        var creator = new Player(creatorId, creatorName, PlayerStatus.NotReady, false, false);
+        var initialTurn = Turn.CreateInitial(creator.Id, settings.TimeLimit);
+        var initialRound = Round.CreateInitial(initialTurn, now);
+        var game = new Game(gameId, settings, GameStatus.Waiting, initialRound, new[] { creator }, new List<ScoreHistory>(), now, now);
+        await repository.SaveAsync(game);
+
+        var newPlayerName = "既存のプレイヤー";
+        var newPlayerId = new PlayerId("existingPlayer123");
+        var newPlayer = new Player(newPlayerId, new PlayerName(newPlayerName), PlayerStatus.NotReady, false, false);
+
+        game.AddPlayer(newPlayer, now);
+        Assert.Equal(2, game.Players.Count);
+        Assert.Contains(game.Players, p => p.Id.Value == newPlayerId.Value);
+        Assert.Contains(game.Players, p => p.Name.Value == newPlayerName);
     }
 }

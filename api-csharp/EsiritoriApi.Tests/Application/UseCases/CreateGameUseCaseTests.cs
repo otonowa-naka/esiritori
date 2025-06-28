@@ -125,7 +125,7 @@ public sealed class CreateGameUseCaseTests
     }
 
     [Fact]
-    public async Task 生成されるゲームIDが6桁の数字である()
+    public async Task 生成されるゲームIDがGUID形式である()
     {
         var request = new CreateGameRequest
         {
@@ -143,11 +143,11 @@ public sealed class CreateGameUseCaseTests
 
         var response = await _useCase.ExecuteAsync(request);
 
-        Assert.Matches(@"^\d{6}$", response.Game.Id);
+        Assert.Matches(@"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$", response.Game.Id);
     }
 
     [Fact]
-    public async Task 生成されるプレイヤーIDが12文字の英数字である()
+    public async Task 生成されるプレイヤーIDがGUID形式である()
     {
         var request = new CreateGameRequest
         {
@@ -165,6 +165,6 @@ public sealed class CreateGameUseCaseTests
 
         var response = await _useCase.ExecuteAsync(request);
 
-        Assert.Matches(@"^[a-f0-9]{12}$", response.Player.Id);
+        Assert.Matches(@"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$", response.Player.Id);
     }
 }

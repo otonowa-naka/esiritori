@@ -1,6 +1,9 @@
 namespace EsiritoriApi.Tests.Integration;
 
 using EsiritoriApi.Application.DTOs;
+using EsiritoriApi.Application.Interfaces;
+using EsiritoriApi.Domain.Entities;
+using EsiritoriApi.Domain.ValueObjects;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
@@ -13,11 +16,13 @@ public sealed class GameApiIntegrationTests : IClassFixture<WebApplicationFactor
 {
     private readonly WebApplicationFactory<Program> _factory;
     private readonly HttpClient _client;
+    private readonly IGameRepository _repository;
 
     public GameApiIntegrationTests(WebApplicationFactory<Program> factory)
     {
         _factory = factory;
         _client = _factory.CreateClient();
+        _repository = _factory.Services.GetRequiredService<IGameRepository>();
     }
 
     [Fact]
@@ -56,9 +61,9 @@ public sealed class GameApiIntegrationTests : IClassFixture<WebApplicationFactor
         Assert.False(gameResponse.Player.IsReady);
         Assert.False(gameResponse.Player.IsDrawer);
 
-        Assert.Matches(@"^\d{6}$", gameResponse.Game.Id);
+        Assert.Matches(@"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$", gameResponse.Game.Id);
 
-        Assert.Matches(@"^[a-f0-9]{12}$", gameResponse.Player.Id);
+        Assert.Matches(@"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$", gameResponse.Player.Id);
     }
 
     [Fact]
@@ -267,5 +272,130 @@ public sealed class GameApiIntegrationTests : IClassFixture<WebApplicationFactor
             var corsHeader = response.Headers.GetValues("Access-Control-Allow-Origin").First();
             Assert.Equal("*", corsHeader);
         }
+    }
+
+    [Fact]
+    public async Task StartGame_有効なゲームIDでゲームが正常に開始される()
+    {
+        var now = DateTime.UtcNow;
+        // Arrange - ゲームを作成
+        var createRequest = new CreateGameRequest
+        {
+            CreatorName = "作成者",
+            Settings = new GameSettingsDto
+            {
+                TimeLimit = 60,
+                RoundCount = 3,
+                PlayerCount = 4
+            }
+        };
+
+        var createResponse = await _client.PostAsJsonAsync("/api/games", createRequest);
+        createResponse.EnsureSuccessStatusCode();
+        var createdGame = await createResponse.Content.ReadFromJsonAsync<CreateGameResponse>();
+
+        // プレイヤーを追加して準備完了状態にする
+        var game = await _repository.FindByIdAsync(new GameId(createdGame!.Game.Id), CancellationToken.None);
+        var player1Id = new PlayerId("integration_test_player1_start");
+        var player1Name = new PlayerName("プレイヤー1");
+        var player1 = new Player(player1Id, player1Name, PlayerStatus.NotReady, false, false);
+        game!.AddPlayer(player1, now);
+        game.UpdatePlayerReadyStatus(new PlayerId(createdGame.Player.Id), true, now);
+        game.UpdatePlayerReadyStatus(player1Id, true, now);
+        await _repository.SaveAsync(game, CancellationToken.None);
+
+        // Act - ゲームを開始
+        var startResponse = await _client.PostAsync($"/api/games/{createdGame.Game.Id}/start", null);
+
+        // Assert
+        startResponse.EnsureSuccessStatusCode();
+        var startGameResponse = await startResponse.Content.ReadFromJsonAsync<StartGameResponse>();
+        Assert.NotNull(startGameResponse);
+        Assert.Equal("Playing", startGameResponse.Game.Status);
+        Assert.Equal(1, startGameResponse.Game.CurrentRound.RoundNumber);
+        Assert.Equal(1, startGameResponse.Game.CurrentRound.CurrentTurn.TurnNumber);
+        Assert.Equal("SettingAnswer", startGameResponse.Game.CurrentRound.CurrentTurn.Status);
+    }
+
+    [Fact]
+    public async Task StartGame_存在しないゲームIDで400エラーが返される()
+    {
+        // Act
+        var response = await _client.PostAsync("/api/games/nonexistent/start", null);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task StartGame_空のゲームIDで404エラーが返される()
+    {
+        // Act
+        var response = await _client.PostAsync("/api/games//start", null);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task StartGame_プレイヤーが2人未満で400エラーが返される()
+    {
+        // Arrange - ゲームを作成（プレイヤー1人のみ）
+        var createRequest = new CreateGameRequest
+        {
+            CreatorName = "作成者",
+            Settings = new GameSettingsDto
+            {
+                TimeLimit = 60,
+                RoundCount = 3,
+                PlayerCount = 4
+            }
+        };
+
+        var createResponse = await _client.PostAsJsonAsync("/api/games", createRequest);
+        createResponse.EnsureSuccessStatusCode();
+        var createdGame = await createResponse.Content.ReadFromJsonAsync<CreateGameResponse>();
+
+        // Act - ゲームを開始
+        var startResponse = await _client.PostAsync($"/api/games/{createdGame!.Game.Id}/start", null);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.BadRequest, startResponse.StatusCode);
+    }
+
+    [Fact]
+    public async Task StartGame_全プレイヤーが準備完了でない場合400エラーが返される()
+    {
+        var now = DateTime.UtcNow;
+        // Arrange - ゲームを作成
+        var createRequest = new CreateGameRequest
+        {
+            CreatorName = "作成者",
+            Settings = new GameSettingsDto
+            {
+                TimeLimit = 60,
+                RoundCount = 3,
+                PlayerCount = 4
+            }
+        };
+
+        var createResponse = await _client.PostAsJsonAsync("/api/games", createRequest);
+        createResponse.EnsureSuccessStatusCode();
+        var createdGame = await createResponse.Content.ReadFromJsonAsync<CreateGameResponse>();
+
+        // プレイヤーを追加するが準備完了状態にしない
+        var game = await _repository.FindByIdAsync(new GameId(createdGame!.Game.Id), CancellationToken.None);
+        var player1Id = new PlayerId("integration_test_player1_notready");
+        var player1Name = new PlayerName("プレイヤー1");
+        var player1 = new Player(player1Id, player1Name, PlayerStatus.NotReady, false, false);
+        game!.AddPlayer(player1, now);
+        // 準備完了状態にしない
+        await _repository.SaveAsync(game, CancellationToken.None);
+
+        // Act - ゲームを開始
+        var startResponse = await _client.PostAsync($"/api/games/{createdGame.Game.Id}/start", null);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.BadRequest, startResponse.StatusCode);
     }
 }

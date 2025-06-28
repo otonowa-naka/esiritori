@@ -1,3 +1,5 @@
+using EsiritoriApi.Domain.Errors;
+
 namespace EsiritoriApi.Domain.ValueObjects;
 
 public enum ScoreReason
@@ -19,20 +21,20 @@ public sealed class ScoreHistory : IEquatable<ScoreHistory>
     {
         if (roundNumber < 1 || roundNumber > 10)
         {
-            throw new ArgumentException("ラウンド番号は1から10の間で設定してください", nameof(roundNumber));
+            throw new DomainErrorException(DomainErrorCodes.ScoreHistory.InvalidRoundNumber, "ラウンド番号は1から10の間で設定してください");
         }
 
         if (turnNumber < 1 || turnNumber > 10)
         {
-            throw new ArgumentException("ターン番号は1から10の間で設定してください", nameof(turnNumber));
+            throw new DomainErrorException(DomainErrorCodes.ScoreHistory.InvalidTurnNumber, "ターン番号は1から10の間で設定してください");
         }
 
         if (points < 1)
         {
-            throw new ArgumentException("ポイントは1以上の整数である必要があります", nameof(points));
+            throw new DomainErrorException(DomainErrorCodes.ScoreHistory.InvalidPoints, "ポイントは1以上の整数である必要があります");
         }
 
-        PlayerId = playerId ?? throw new ArgumentNullException(nameof(playerId));
+        PlayerId = playerId ?? throw new DomainErrorException(DomainErrorCodes.ScoreHistory.InvalidPlayerId, "プレイヤーIDはnullにできません");
         RoundNumber = roundNumber;
         TurnNumber = turnNumber;
         Points = points;

@@ -1,3 +1,5 @@
+using EsiritoriApi.Domain.Errors;
+
 namespace EsiritoriApi.Domain.ValueObjects;
 
 /// <summary>
@@ -21,16 +23,16 @@ public sealed class Round : IEquatable<Round>
     /// <param name="currentTurn">現在のターン</param>
     /// <param name="startedAt">開始時刻</param>
     /// <param name="endedAt">終了時刻（オプション）</param>
-    /// <exception cref="ArgumentException">ラウンド番号が1-10の範囲外の場合</exception>
+    /// <exception cref="DomainErrorException">ラウンド番号が1-10の範囲外の場合</exception>
     /// <exception cref="ArgumentNullException">currentTurnがnullの場合</exception>
     public Round(int roundNumber, Turn currentTurn, DateTime startedAt, Option<DateTime> endedAt)
     {
         if (roundNumber < 1 || roundNumber > 10)
         {
-            throw new ArgumentException("ラウンド番号は1から10の間で設定してください", nameof(roundNumber));
+            throw new DomainErrorException(DomainErrorCodes.Round.InvalidRoundNumber, "ラウンド番号は1から10の間で設定してください");
         }
         RoundNumber = roundNumber;
-        CurrentTurn = currentTurn ?? throw new ArgumentNullException(nameof(currentTurn));
+        CurrentTurn = currentTurn ?? throw new DomainErrorException(DomainErrorCodes.Round.InvalidCurrentTurn, "現在のターンはnullにできません");
         StartedAt = startedAt;
         EndedAt = endedAt;
     }

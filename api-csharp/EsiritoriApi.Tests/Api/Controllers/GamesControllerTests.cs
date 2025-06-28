@@ -10,13 +10,15 @@ using Xunit;
 
 public sealed class GamesControllerTests
 {
-    private readonly Mock<ICreateGameUseCase> _mockUseCase;
+    private readonly Mock<ICreateGameUseCase> _mockCreateGameUseCase;
+    private readonly Mock<IStartGameUseCase> _mockStartGameUseCase;
     private readonly GamesController _controller;
 
     public GamesControllerTests()
     {
-        _mockUseCase = new Mock<ICreateGameUseCase>();
-        _controller = new GamesController(_mockUseCase.Object);
+        _mockCreateGameUseCase = new Mock<ICreateGameUseCase>();
+        _mockStartGameUseCase = new Mock<IStartGameUseCase>();
+        _controller = new GamesController(_mockCreateGameUseCase.Object, _mockStartGameUseCase.Object);
     }
 
     [Fact]
@@ -77,7 +79,7 @@ public sealed class GamesControllerTests
             }
         };
 
-        _mockUseCase.Setup(u => u.ExecuteAsync(It.IsAny<CreateGameRequest>(), It.IsAny<CancellationToken>()))
+        _mockCreateGameUseCase.Setup(u => u.ExecuteAsync(It.IsAny<CreateGameRequest>(), It.IsAny<CancellationToken>()))
                    .ReturnsAsync(expectedResponse);
 
         var result = await _controller.CreateGame(request);
@@ -167,7 +169,7 @@ public sealed class GamesControllerTests
         };
 
         var expectedException = new ArgumentException("無効な引数です");
-        _mockUseCase.Setup(u => u.ExecuteAsync(It.IsAny<CreateGameRequest>(), It.IsAny<CancellationToken>()))
+        _mockCreateGameUseCase.Setup(u => u.ExecuteAsync(It.IsAny<CreateGameRequest>(), It.IsAny<CancellationToken>()))
                    .ThrowsAsync(expectedException);
 
         var result = await _controller.CreateGame(request);
@@ -194,7 +196,7 @@ public sealed class GamesControllerTests
         };
 
         var expectedException = new InvalidOperationException("無効な操作です");
-        _mockUseCase.Setup(u => u.ExecuteAsync(It.IsAny<CreateGameRequest>(), It.IsAny<CancellationToken>()))
+        _mockCreateGameUseCase.Setup(u => u.ExecuteAsync(It.IsAny<CreateGameRequest>(), It.IsAny<CancellationToken>()))
                    .ThrowsAsync(expectedException);
 
         var result = await _controller.CreateGame(request);
@@ -218,7 +220,7 @@ public sealed class GamesControllerTests
         };
 
         var expectedException = new Exception("予期しないエラー");
-        _mockUseCase.Setup(u => u.ExecuteAsync(It.IsAny<CreateGameRequest>(), It.IsAny<CancellationToken>()))
+        _mockCreateGameUseCase.Setup(u => u.ExecuteAsync(It.IsAny<CreateGameRequest>(), It.IsAny<CancellationToken>()))
                    .ThrowsAsync(expectedException);
 
         var result = await _controller.CreateGame(request);
@@ -251,17 +253,148 @@ public sealed class GamesControllerTests
         };
 
         var cancellationToken = new CancellationToken();
-        _mockUseCase.Setup(u => u.ExecuteAsync(request, cancellationToken))
+        _mockCreateGameUseCase.Setup(u => u.ExecuteAsync(request, cancellationToken))
                    .ReturnsAsync(expectedResponse);
 
         await _controller.CreateGame(request, cancellationToken);
 
-        _mockUseCase.Verify(u => u.ExecuteAsync(request, cancellationToken), Times.Once);
+        _mockCreateGameUseCase.Verify(u => u.ExecuteAsync(request, cancellationToken), Times.Once);
     }
 
     [Fact]
     public void コンストラクタ_nullUseCaseで例外が発生する()
     {
-        Assert.Throws<ArgumentNullException>(() => new GamesController(null!));
+        Assert.Throws<ArgumentNullException>(() => new GamesController(null!, null!));
+    }
+
+    [Fact]
+    public async Task StartGame_有効なゲームIDで正常にゲームが開始される()
+    {
+        var gameId = "123456";
+        var expectedResponse = new StartGameResponse
+        {
+            Game = new GameDto
+            {
+                Id = gameId,
+                Status = "Playing",
+                Settings = new GameSettingsDto
+                {
+                    TimeLimit = 60,
+                    RoundCount = 3,
+                    PlayerCount = 4
+                },
+                CurrentRound = new RoundDto
+                {
+                    RoundNumber = 1,
+                    CurrentTurn = new TurnDto
+                    {
+                        TurnNumber = 1,
+                        Status = "SettingAnswer",
+                        DrawerId = "creator123",
+                        Answer = ""
+                    }
+                },
+                Players = new List<PlayerDto>
+                {
+                    new PlayerDto
+                    {
+                        Id = "creator123",
+                        Name = "作成者",
+                        IsReady = true,
+                        IsDrawer = true
+                    }
+                },
+                ScoreRecords = new List<ScoreRecordDto>()
+            }
+        };
+
+        _mockStartGameUseCase.Setup(u => u.ExecuteAsync(It.IsAny<StartGameRequest>(), It.IsAny<CancellationToken>()))
+                   .ReturnsAsync(expectedResponse);
+
+        var result = await _controller.StartGame(gameId);
+
+        var okResult = Assert.IsType<OkObjectResult>(result.Result);
+        var response = Assert.IsType<StartGameResponse>(okResult.Value);
+        Assert.Equal(gameId, response.Game.Id);
+        Assert.Equal("Playing", response.Game.Status);
+        Assert.Equal(200, okResult.StatusCode);
+    }
+
+    [Fact]
+    public async Task StartGame_空のゲームIDでBadRequestが返される()
+    {
+        var result = await _controller.StartGame("");
+
+        var badRequestResult = Assert.IsType<BadRequestObjectResult>(result.Result);
+        Assert.Equal(400, badRequestResult.StatusCode);
+    }
+
+    [Fact]
+    public async Task StartGame_nullゲームIDでBadRequestが返される()
+    {
+        var result = await _controller.StartGame(null!);
+
+        var badRequestResult = Assert.IsType<BadRequestObjectResult>(result.Result);
+        Assert.Equal(400, badRequestResult.StatusCode);
+    }
+
+    [Fact]
+    public async Task StartGame_ArgumentExceptionでBadRequestが返される()
+    {
+        var gameId = "123456";
+        var expectedException = new ArgumentException("無効な引数です");
+        _mockStartGameUseCase.Setup(u => u.ExecuteAsync(It.IsAny<StartGameRequest>(), It.IsAny<CancellationToken>()))
+                   .ThrowsAsync(expectedException);
+
+        var result = await _controller.StartGame(gameId);
+
+        var badRequestResult = Assert.IsType<BadRequestObjectResult>(result.Result);
+        Assert.Equal(400, badRequestResult.StatusCode);
+    }
+
+    [Fact]
+    public async Task StartGame_InvalidOperationExceptionでBadRequestが返される()
+    {
+        var gameId = "123456";
+        var expectedException = new InvalidOperationException("無効な操作です");
+        _mockStartGameUseCase.Setup(u => u.ExecuteAsync(It.IsAny<StartGameRequest>(), It.IsAny<CancellationToken>()))
+                   .ThrowsAsync(expectedException);
+
+        var result = await _controller.StartGame(gameId);
+
+        var badRequestResult = Assert.IsType<BadRequestObjectResult>(result.Result);
+        Assert.Equal(400, badRequestResult.StatusCode);
+    }
+
+    [Fact]
+    public async Task StartGame_予期しない例外で500エラーが返される()
+    {
+        var gameId = "123456";
+        var expectedException = new Exception("予期しないエラー");
+        _mockStartGameUseCase.Setup(u => u.ExecuteAsync(It.IsAny<StartGameRequest>(), It.IsAny<CancellationToken>()))
+                   .ThrowsAsync(expectedException);
+
+        var result = await _controller.StartGame(gameId);
+
+        var statusCodeResult = Assert.IsType<ObjectResult>(result.Result);
+        Assert.Equal(500, statusCodeResult.StatusCode);
+    }
+
+    [Fact]
+    public async Task StartGame_キャンセレーショントークンが適切に渡される()
+    {
+        var gameId = "123456";
+        var expectedResponse = new StartGameResponse
+        {
+            Game = new GameDto { Id = gameId, Status = "Playing" }
+        };
+
+        var cancellationToken = new CancellationToken();
+        _mockStartGameUseCase.Setup(u => u.ExecuteAsync(It.Is<StartGameRequest>(r => r.GameId == gameId), cancellationToken))
+                   .ReturnsAsync(expectedResponse);
+
+        await _controller.StartGame(gameId, cancellationToken);
+
+        _mockStartGameUseCase.Verify(u => u.ExecuteAsync(It.Is<StartGameRequest>(r => r.GameId == gameId), cancellationToken), Times.Once);
     }
 }

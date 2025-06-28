@@ -1,3 +1,5 @@
+using EsiritoriApi.Domain.Errors;
+
 namespace EsiritoriApi.Domain.ValueObjects;
 
 /// <summary>
@@ -12,7 +14,7 @@ public sealed class Answer : IEquatable<Answer>
     /// お題の新しいインスタンスを作成します
     /// </summary>
     /// <param name="value">お題の文字列（ひらがな、1-50文字）</param>
-    /// <exception cref="ArgumentException">
+    /// <exception cref="DomainErrorException">
     /// お題が50文字を超える、お題がひらがな以外の文字を含む場合
     /// </exception>
     public Answer(string value)
@@ -20,12 +22,12 @@ public sealed class Answer : IEquatable<Answer>
         var trimmed = value?.Trim() ?? string.Empty;
         if (trimmed.Length > 50)
         {
-            throw new ArgumentException("お題は50文字以下である必要があります", nameof(value));
+            throw new DomainErrorException(DomainErrorCodes.ScoreHistory.InvalidPoints, "お題は50文字以下である必要があります");
         }
 
         if (!string.IsNullOrEmpty(trimmed) && !System.Text.RegularExpressions.Regex.IsMatch(trimmed, @"^[\u3041-\u3096]+$"))
         {
-            throw new ArgumentException("お題はひらがなで入力してください", nameof(value));
+            throw new DomainErrorException(DomainErrorCodes.ScoreHistory.InvalidPoints, "お題はひらがなで入力してください");
         }
 
         Value = trimmed;
@@ -49,7 +51,7 @@ public sealed class Answer : IEquatable<Answer>
     {
         if (playerAnswer == null)
         {
-            throw new ArgumentNullException(nameof(playerAnswer));
+            throw new DomainErrorException(DomainErrorCodes.ScoreHistory.InvalidPlayerId, "プレイヤーの回答はnullにできません");
         }
 
         return Value.Trim() == playerAnswer.Value.Trim();

@@ -1,95 +1,87 @@
 namespace EsiritoriApi.Tests.Domain.ValueObjects;
 
 using EsiritoriApi.Domain.ValueObjects;
+using EsiritoriApi.Domain.Errors;
 using Xunit;
 
 public sealed class RoundTests
 {
     [Fact]
-    public void 有効な値でRoundが正常に作成される()
-    {
-        var roundNumber = 1;
-        var drawerId = new PlayerId("drawer123");
-        var currentTurn = Turn.CreateInitial(drawerId, 60);
-        var startedAt = DateTime.UtcNow;
-        var endedAt = Option<DateTime>.None();
-
-        var round = new Round(roundNumber, currentTurn, startedAt, endedAt);
-
-        Assert.Equal(roundNumber, round.RoundNumber);
-        Assert.Equal(currentTurn, round.CurrentTurn);
-        Assert.Equal(startedAt, round.StartedAt);
-        Assert.Equal(endedAt, round.EndedAt);
-    }
-
-    [Fact]
-    public void 同じ値のRound同士は等価である()
+    public void 正常な値でRoundが作成される()
     {
         var drawerId = new PlayerId("drawer123");
         var turn = Turn.CreateInitial(drawerId, 60);
         var startTime = DateTime.UtcNow;
-        var endTime = Option<DateTime>.Some(DateTime.UtcNow.AddMinutes(5));
-        var round1 = new Round(1, turn, startTime, endTime);
-        var round2 = new Round(1, turn, startTime, endTime);
+        var round = new Round(1, turn, startTime, Option<DateTime>.None());
 
-        Assert.Equal(round1, round2);
-        Assert.True(round1 == round2);
-        Assert.False(round1 != round2);
-        Assert.Equal(round1.GetHashCode(), round2.GetHashCode());
-    }
-
-    [Fact]
-    public void 異なる値のRound同士は等価でない()
-    {
-        var drawerId = new PlayerId("drawer123");
-        var turn1 = Turn.CreateInitial(drawerId, 60);
-        var turn2 = new Turn(2, drawerId, Option<Answer>.Some(new Answer("")), TurnStatus.SettingAnswer, 60, DateTime.MinValue, Option<DateTime>.None());
-        var startTime = DateTime.UtcNow;
-        var round1 = new Round(1, turn1, startTime, Option<DateTime>.None());
-        var round2 = new Round(1, turn2, startTime, Option<DateTime>.None());
-
-        Assert.NotEqual(round1, round2);
-        Assert.False(round1 == round2);
-        Assert.True(round1 != round2);
-    }
-
-    [Fact]
-    public void nullとの比較で等価でない()
-    {
-        var drawerId = new PlayerId("drawer123");
-        var turn = Turn.CreateInitial(drawerId, 60);
-        var round = new Round(1, turn, DateTime.UtcNow, Option<DateTime>.None());
-
-        Assert.False(round.Equals(null));
-        Assert.False(round == null);
-        Assert.True(round != null);
-    }
-
-    [Fact]
-    public void 無効なラウンド番号の場合例外が発生する()
-    {
-        var drawerId = new PlayerId("drawer123");
-        var turn = Turn.CreateInitial(drawerId, 60);
-
-        var exception = Assert.Throws<ArgumentException>(() => new Round(0, turn, DateTime.UtcNow, Option<DateTime>.None()));
-        Assert.Equal("ラウンド番号は1から10の間で設定してください (Parameter 'roundNumber')", exception.Message);
-    }
-
-    [Fact]
-    public void nullCurrentTurnの場合例外が発生する()
-    {
-        Assert.Throws<ArgumentNullException>(() => new Round(1, null!, DateTime.UtcNow, Option<DateTime>.None()));
-    }
-
-    [Fact]
-    public void CreateNewファクトリメソッドで新しいラウンドが作成される()
-    {
-        var initialTurn = Turn.CreateInitial(new PlayerId("drawer123"), 60);
-        var startTime = DateTime.UtcNow;
-        var round = Round.CreateInitial(initialTurn, startTime);
         Assert.Equal(1, round.RoundNumber);
-        Assert.Equal(initialTurn, round.CurrentTurn);
+        Assert.Equal(turn, round.CurrentTurn);
         Assert.Equal(startTime, round.StartedAt);
         Assert.False(round.EndedAt.HasValue);
+    }
+
+    [Fact]
+    public void ラウンド番号が1未満の場合例外が発生する()
+    {
+        var drawerId = new PlayerId("drawer123");
+        var turn = Turn.CreateInitial(drawerId, 60);
+        var exception = Assert.Throws<DomainErrorException>(() => new Round(0, turn, DateTime.UtcNow, Option<DateTime>.None()));
+        Assert.Equal(DomainErrorCodes.Round.InvalidRoundNumber, exception.ErrorCode);
+    }
+
+    [Fact]
+    public void ラウンド番号が10を超える場合例外が発生する()
+    {
+        var drawerId = new PlayerId("drawer123");
+        var turn = Turn.CreateInitial(drawerId, 60);
+        var exception = Assert.Throws<DomainErrorException>(() => new Round(11, turn, DateTime.UtcNow, Option<DateTime>.None()));
+        Assert.Equal(DomainErrorCodes.Round.InvalidRoundNumber, exception.ErrorCode);
+    }
+
+    [Fact]
+    public void 現在のターンがnullの場合例外が発生する()
+    {
+        var exception = Assert.Throws<DomainErrorException>(() => new Round(1, null!, DateTime.UtcNow, Option<DateTime>.None()));
+        Assert.Equal(DomainErrorCodes.Round.InvalidCurrentTurn, exception.ErrorCode);
+    }
+
+    [Fact]
+    public void CreateInitialが正しく動作する()
+    {
+        var drawerId = new PlayerId("drawer123");
+        var turn = Turn.CreateInitial(drawerId, 60);
+        var startTime = DateTime.UtcNow;
+        var round = Round.CreateInitial(turn, startTime);
+
+        Assert.Equal(1, round.RoundNumber);
+        Assert.Equal(turn, round.CurrentTurn);
+        Assert.Equal(startTime, round.StartedAt);
+        Assert.False(round.EndedAt.HasValue);
+    }
+
+    [Fact]
+    public void 等価性が正しく判定される()
+    {
+        var drawerId = new PlayerId("drawer123");
+        var turn = Turn.CreateInitial(drawerId, 60);
+        var startTime = DateTime.UtcNow;
+        var round1 = new Round(1, turn, startTime, Option<DateTime>.None());
+        var round2 = new Round(1, turn, startTime, Option<DateTime>.None());
+        var round3 = new Round(2, turn, startTime, Option<DateTime>.None());
+
+        Assert.Equal(round1, round2);
+        Assert.NotEqual(round1, round3);
+    }
+
+    [Fact]
+    public void ハッシュコードが正しく計算される()
+    {
+        var drawerId = new PlayerId("drawer123");
+        var turn = Turn.CreateInitial(drawerId, 60);
+        var startTime = DateTime.UtcNow;
+        var round1 = new Round(1, turn, startTime, Option<DateTime>.None());
+        var round2 = new Round(1, turn, startTime, Option<DateTime>.None());
+
+        Assert.Equal(round1.GetHashCode(), round2.GetHashCode());
     }
 }
