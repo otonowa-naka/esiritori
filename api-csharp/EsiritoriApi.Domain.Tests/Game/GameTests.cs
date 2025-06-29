@@ -1,8 +1,10 @@
 namespace EsiritoriApi.Tests.Domain.Entities;
 
-using EsiritoriApi.Domain.Entities;
+using EsiritoriApi.Domain.Game;
+using EsiritoriApi.Domain.Game.Entities;
+using EsiritoriApi.Domain.Game.ValueObjects;
+using EsiritoriApi.Domain.Scoring.ValueObjects;
 using EsiritoriApi.Domain.Errors;
-using EsiritoriApi.Domain.ValueObjects;
 using Xunit;
 
 public sealed class GameTests

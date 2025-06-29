@@ -1,6 +1,6 @@
-namespace EsiritoriApi.Domain.Entities;
+namespace EsiritoriApi.Domain.Game.Entities;
 
-using EsiritoriApi.Domain.ValueObjects;
+using EsiritoriApi.Domain.Game.ValueObjects;
 
 /// <summary>
 /// プレイヤーの状態を表す列挙型

@@ -1,4 +1,4 @@
-namespace EsiritoriApi.Domain.ValueObjects;
+namespace EsiritoriApi.Domain.Shared.ValueObjects;
 
 public readonly struct Option<T>
 {

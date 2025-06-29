@@ -105,7 +105,11 @@ EsiritoriApi.sln
 │   └── Repositories/             # リポジトリ実装
 ├── EsiritoriApi.Api/            # プレゼンテーション層
 │   └── Controllers/              # APIコントローラー
-└── EsiritoriApi.Tests/          # テストプロジェクト
+├── EsiritoriApi.Domain.Tests/        # ドメイン層テスト
+├── EsiritoriApi.Application.Tests/   # アプリケーション層テスト
+├── EsiritoriApi.Infrastructure.Tests/ # インフラ層テスト
+├── EsiritoriApi.Api.Tests/          # API層テスト
+└── EsiritoriApi.Integration.Tests/  # 統合テスト
 ```
 
 ### ドメインモデルアプローチ

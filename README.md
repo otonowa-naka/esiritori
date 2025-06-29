@@ -171,10 +171,22 @@ dotnet test --filter "ClassName=GameTests"
 
 #### テスト構成
 
-- **単体テスト**: ドメインエンティティ、値オブジェクト
-- **統合テスト**: API エンドポイント
-- **ユースケーステスト**: アプリケーション層
-- **リポジトリテスト**: データアクセス層
+**層別テストプロジェクト:**
+- **EsiritoriApi.Domain.Tests**: ドメインエンティティ、値オブジェクトのテスト (82.89%カバレッジ)
+- **EsiritoriApi.Application.Tests**: ユースケース、DTOのテスト (88.81%カバレッジ)
+- **EsiritoriApi.Infrastructure.Tests**: リポジトリ、データアクセスのテスト (100%カバレッジ)
+- **EsiritoriApi.Api.Tests**: コントローラー、HTTPエンドポイントのテスト (53.94%カバレッジ)
+- **EsiritoriApi.Integration.Tests**: エンドツーエンドの統合テスト
+
+**層別テスト実行:**
+```bash
+# 特定の層のテストを実行
+dotnet test EsiritoriApi.Domain.Tests/
+dotnet test EsiritoriApi.Application.Tests/
+dotnet test EsiritoriApi.Infrastructure.Tests/
+dotnet test EsiritoriApi.Api.Tests/
+dotnet test EsiritoriApi.Integration.Tests/
+```
 
 ### APIモックのテスト
 
@@ -195,7 +207,11 @@ esiritori/
 │   ├── EsiritoriApi.Application/  # アプリケーション層
 │   ├── EsiritoriApi.Domain/       # ドメイン層
 │   ├── EsiritoriApi.Infrastructure/ # インフラ層
-│   └── EsiritoriApi.Tests/        # テストプロジェクト
+│   ├── EsiritoriApi.Domain.Tests/        # ドメイン層テスト
+│   ├── EsiritoriApi.Application.Tests/   # アプリケーション層テスト
+│   ├── EsiritoriApi.Infrastructure.Tests/ # インフラ層テスト
+│   ├── EsiritoriApi.Api.Tests/          # API層テスト
+│   └── EsiritoriApi.Integration.Tests/  # 統合テスト
 ├── design/                # 設計ドキュメント
 ├── docs/                  # 開発ガイドライン
 │   └── Coderule.md        # コーディングルール

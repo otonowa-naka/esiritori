@@ -1,8 +1,10 @@
 namespace EsiritoriApi.Application.Tests.Interfaces;
 
 using EsiritoriApi.Application.Interfaces;
-using EsiritoriApi.Domain.Entities;
-using EsiritoriApi.Domain.ValueObjects;
+using EsiritoriApi.Domain.Game;
+using EsiritoriApi.Domain.Game.Entities;
+using EsiritoriApi.Domain.Game.ValueObjects;
+using EsiritoriApi.Domain.Scoring.ValueObjects;
 using Moq;
 using Xunit;
 

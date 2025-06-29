@@ -1,6 +1,7 @@
 using EsiritoriApi.Domain.Errors;
+using EsiritoriApi.Domain.Game.ValueObjects;
 
-namespace EsiritoriApi.Domain.ValueObjects;
+namespace EsiritoriApi.Domain.Scoring.ValueObjects;
 
 public enum ScoreReason
 {

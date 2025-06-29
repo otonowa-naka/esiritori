@@ -2,8 +2,9 @@ namespace EsiritoriApi.Tests.Integration;
 
 using EsiritoriApi.Application.DTOs;
 using EsiritoriApi.Application.Interfaces;
-using EsiritoriApi.Domain.Entities;
-using EsiritoriApi.Domain.ValueObjects;
+using EsiritoriApi.Domain.Game;
+using EsiritoriApi.Domain.Game.Entities;
+using EsiritoriApi.Domain.Game.ValueObjects;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;

@@ -1,6 +1,7 @@
 using EsiritoriApi.Domain.Errors;
+using EsiritoriApi.Domain.Shared.ValueObjects;
 
-namespace EsiritoriApi.Domain.ValueObjects;
+namespace EsiritoriApi.Domain.Game.ValueObjects;
 
 /// <summary>
 /// ターンの状態を表す列挙型

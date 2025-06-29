@@ -1,4 +1,4 @@
-using EsiritoriApi.Domain.ValueObjects;
+using EsiritoriApi.Domain.Shared.ValueObjects;
 using Xunit;
 using System;
 

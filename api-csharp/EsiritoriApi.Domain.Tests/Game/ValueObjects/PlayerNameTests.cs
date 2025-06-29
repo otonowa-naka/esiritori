@@ -1,7 +1,7 @@
 namespace EsiritoriApi.Tests.Domain.ValueObjects;
 
 using EsiritoriApi.Domain.Errors;
-using EsiritoriApi.Domain.ValueObjects;
+using EsiritoriApi.Domain.Game.ValueObjects;
 using Xunit;
 
 public class PlayerNameTests

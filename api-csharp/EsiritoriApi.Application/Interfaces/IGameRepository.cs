@@ -1,7 +1,7 @@
 namespace EsiritoriApi.Application.Interfaces;
 
-using EsiritoriApi.Domain.Entities;
-using EsiritoriApi.Domain.ValueObjects;
+using EsiritoriApi.Domain.Game;
+using EsiritoriApi.Domain.Game.ValueObjects;
 
 public interface IGameRepository
 {

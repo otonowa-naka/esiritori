@@ -1,6 +1,6 @@
 using EsiritoriApi.Domain.Errors;
 
-namespace EsiritoriApi.Domain.ValueObjects;
+namespace EsiritoriApi.Domain.Game.ValueObjects;
 
 public sealed class GameSettings : IEquatable<GameSettings>
 {

@@ -1,8 +1,9 @@
-namespace EsiritoriApi.Domain.Entities;
+namespace EsiritoriApi.Domain.Game;
 
-using EsiritoriApi.Domain.ValueObjects;
-using EsiritoriApi.Domain.Entities;
+using EsiritoriApi.Domain.Game.ValueObjects;
+using EsiritoriApi.Domain.Game.Entities;
 using EsiritoriApi.Domain.Errors;
+using EsiritoriApi.Domain.Scoring.ValueObjects;
 
 /// <summary>
 /// ゲームの状態を表す列挙型

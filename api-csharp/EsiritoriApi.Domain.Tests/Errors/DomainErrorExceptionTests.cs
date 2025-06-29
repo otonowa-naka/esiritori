@@ -1,7 +1,7 @@
 using EsiritoriApi.Domain.Errors;
 using Xunit;
 
-namespace EsiritoriApi.Tests.Domain.Errors;
+namespace EsiritoriApi.Domain.Tests.Errors;
 
 [Trait("Category", "ドメインモデル")]
 public class DomainErrorExceptionTests

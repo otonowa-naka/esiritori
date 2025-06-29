@@ -1,6 +1,7 @@
 using EsiritoriApi.Domain.Errors;
+using EsiritoriApi.Domain.Shared.ValueObjects;
 
-namespace EsiritoriApi.Domain.ValueObjects;
+namespace EsiritoriApi.Domain.Game.ValueObjects;
 
 /// <summary>
 /// ゲームのラウンドを表す値オブジェクト

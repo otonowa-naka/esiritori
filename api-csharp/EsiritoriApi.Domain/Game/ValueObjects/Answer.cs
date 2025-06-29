@@ -1,6 +1,6 @@
 using EsiritoriApi.Domain.Errors;
 
-namespace EsiritoriApi.Domain.ValueObjects;
+namespace EsiritoriApi.Domain.Game.ValueObjects;
 
 /// <summary>
 /// お題（ひらがな）を表す値オブジェクト

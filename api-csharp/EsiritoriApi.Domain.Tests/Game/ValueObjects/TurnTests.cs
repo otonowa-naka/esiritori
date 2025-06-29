@@ -1,6 +1,7 @@
 namespace EsiritoriApi.Tests.Domain.ValueObjects;
 
-using EsiritoriApi.Domain.ValueObjects;
+using EsiritoriApi.Domain.Game.ValueObjects;
+using EsiritoriApi.Domain.Shared.ValueObjects;
 using EsiritoriApi.Domain.Errors;
 using Xunit;
 
