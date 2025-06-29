@@ -4,6 +4,7 @@ using EsiritoriApi.Application.DTOs;
 using EsiritoriApi.Application.Interfaces;
 using EsiritoriApi.Application.UseCases;
 using EsiritoriApi.Domain.Entities;
+using EsiritoriApi.Domain.Errors;
 using EsiritoriApi.Domain.ValueObjects;
 using Moq;
 using Xunit;
@@ -98,7 +99,7 @@ public sealed class StartGameUseCaseTests
         _mockRepository.Setup(r => r.FindByIdAsync(It.IsAny<GameId>(), It.IsAny<CancellationToken>()))
                       .ReturnsAsync(game);
 
-        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => _useCase.ExecuteAsync(request));
+        var exception = await Assert.ThrowsAsync<DomainErrorException>(() => _useCase.ExecuteAsync(request));
         Assert.Equal("ゲームは既に開始されています", exception.Message);
     }
 
@@ -120,7 +121,7 @@ public sealed class StartGameUseCaseTests
         _mockRepository.Setup(r => r.FindByIdAsync(It.IsAny<GameId>(), It.IsAny<CancellationToken>()))
                       .ReturnsAsync(game);
 
-        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => _useCase.ExecuteAsync(request));
+        var exception = await Assert.ThrowsAsync<DomainErrorException>(() => _useCase.ExecuteAsync(request));
         Assert.Equal("ゲームを開始するには最低2人のプレイヤーが必要です", exception.Message);
     }
 
@@ -149,7 +150,7 @@ public sealed class StartGameUseCaseTests
         _mockRepository.Setup(r => r.FindByIdAsync(It.IsAny<GameId>(), It.IsAny<CancellationToken>()))
                       .ReturnsAsync(game);
 
-        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => _useCase.ExecuteAsync(request));
+        var exception = await Assert.ThrowsAsync<DomainErrorException>(() => _useCase.ExecuteAsync(request));
         Assert.Equal("全てのプレイヤーが準備完了状態である必要があります", exception.Message);
     }
 

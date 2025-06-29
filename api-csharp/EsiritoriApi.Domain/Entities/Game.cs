@@ -138,7 +138,8 @@ public sealed class Game : IEquatable<Game>
             throw new DomainErrorException(DomainErrorCodes.Game.PlayerNotFound, "プレイヤーが見つかりません");
         var updatedPlayers = Players.ToList();
         var currentPlayer = updatedPlayers[playerIndex];
-        updatedPlayers[playerIndex] = new Player(currentPlayer.Id, currentPlayer.Name, currentPlayer.Status, isReady, currentPlayer.IsDrawer);
+        var newStatus = isReady ? PlayerStatus.Ready : PlayerStatus.NotReady;
+        updatedPlayers[playerIndex] = new Player(currentPlayer.Id, currentPlayer.Name, newStatus, isReady, currentPlayer.IsDrawer);
         Players = updatedPlayers.AsReadOnly();
         UpdatedAt = now;
     }

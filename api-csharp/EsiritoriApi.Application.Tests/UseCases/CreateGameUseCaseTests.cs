@@ -4,6 +4,7 @@ using EsiritoriApi.Application.DTOs;
 using EsiritoriApi.Application.Interfaces;
 using EsiritoriApi.Application.UseCases;
 using EsiritoriApi.Domain.Entities;
+using EsiritoriApi.Domain.Errors;
 using EsiritoriApi.Domain.ValueObjects;
 using Moq;
 using Xunit;
@@ -76,7 +77,7 @@ public sealed class CreateGameUseCaseTests
         _mockRepository.Setup(r => r.SaveAsync(It.IsAny<Game>(), It.IsAny<CancellationToken>()))
                       .Returns(Task.CompletedTask);
 
-        await Assert.ThrowsAsync<ArgumentException>(() => _useCase.ExecuteAsync(request));
+        await Assert.ThrowsAsync<DomainErrorException>(() => _useCase.ExecuteAsync(request));
     }
 
     [Fact]

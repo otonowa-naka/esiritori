@@ -2,6 +2,7 @@ namespace EsiritoriApi.Api.Controllers;
 
 using EsiritoriApi.Application.DTOs;
 using EsiritoriApi.Application.UseCases;
+using EsiritoriApi.Domain.Errors;
 using Microsoft.AspNetCore.Mvc;
 
 [ApiController]
@@ -32,6 +33,10 @@ public sealed class GamesController : ControllerBase
             var response = await _createGameUseCase.ExecuteAsync(request, cancellationToken);
             return CreatedAtAction(nameof(CreateGame), new { id = response.Game.Id }, response);
         }
+        catch (DomainErrorException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
         catch (ArgumentException ex)
         {
             return BadRequest(new { error = ex.Message });
@@ -61,6 +66,10 @@ public sealed class GamesController : ControllerBase
             var request = new StartGameRequest { GameId = gameId };
             var response = await _startGameUseCase.ExecuteAsync(request, cancellationToken);
             return Ok(response);
+        }
+        catch (DomainErrorException ex)
+        {
+            return BadRequest(new { error = ex.Message });
         }
         catch (ArgumentException ex)
         {

@@ -36,7 +36,7 @@ public class PlayerNameTests
     }
 
     [Fact]
-    public void 20文字を超える場合例外が発生する()
+    public void _20文字を超える場合例外が発生する()
     {
         var longName = new string('あ', 21);
         var exception = Assert.Throws<DomainErrorException>(() => new PlayerName(longName));
@@ -44,7 +44,7 @@ public class PlayerNameTests
     }
 
     [Fact]
-    public void 20文字の場合は正常に作成される()
+    public void _20文字の場合は正常に作成される()
     {
         var name = new PlayerName(new string('あ', 20));
 

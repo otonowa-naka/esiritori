@@ -15,7 +15,7 @@ public sealed class AnswerTests
     }
 
     [Fact]
-    public void 50文字のひらがなでAnswerが作成される()
+    public void _50文字のひらがなでAnswerが作成される()
     {
         var longAnswer = new string('あ', 50);
         var answer = new Answer(longAnswer);
@@ -24,7 +24,7 @@ public sealed class AnswerTests
     }
 
     [Fact]
-    public void 50文字を超える場合例外が発生する()
+    public void _50文字を超える場合例外が発生する()
     {
         var longAnswer = new string('あ', 51);
         var exception = Assert.Throws<DomainErrorException>(() => new Answer(longAnswer));

@@ -228,52 +228,59 @@ public sealed class InMemoryGameRepositoryTests
     }
 
     [Fact]
-    public async Task ゲームに既存のプレイヤー追加時_既存のゲームが更新される_既存のプレイヤーが既に存在する場合()
+    public async Task CancellationToken対応_SaveAsync()
     {
-        var now = DateTime.UtcNow;
         var repository = new InMemoryGameRepository();
-        var gameId = new GameId("123456");
-        var settings = new GameSettings(60, 3, 4);
-        var creatorName = new PlayerName("テスト作成者");
-        var creatorId = new PlayerId("creator123");
-        var creator = new Player(creatorId, creatorName, PlayerStatus.NotReady, false, false);
-        var initialTurn = Turn.CreateInitial(creator.Id, settings.TimeLimit);
-        var initialRound = Round.CreateInitial(initialTurn, now);
-        var game = new Game(gameId, settings, GameStatus.Waiting, initialRound, new[] { creator }, new List<ScoreHistory>(), now, now);
-        await repository.SaveAsync(game);
+        var game = CreateTestGame("123456", "テスト作成者");
+        var cancellationTokenSource = new CancellationTokenSource();
 
-        var newPlayerName = "既存のプレイヤー";
-        var newPlayerId = new PlayerId("existingPlayer123");
-        var newPlayer = new Player(newPlayerId, new PlayerName(newPlayerName), PlayerStatus.NotReady, false, false);
+        await repository.SaveAsync(game, cancellationTokenSource.Token);
 
-        game.AddPlayer(newPlayer, now);
-        Assert.Equal(2, game.Players.Count);
-        Assert.Contains(game.Players, p => p.Id.Value == newPlayerId.Value);
-        Assert.Contains(game.Players, p => p.Name.Value == newPlayerName);
+        var savedGame = await repository.FindByIdAsync(game.Id);
+        Assert.NotNull(savedGame);
+        Assert.Equal(game.Id, savedGame.Id);
     }
 
     [Fact]
-    public async Task ゲームに既存のプレイヤー追加時_既存のゲームが更新される_既存のプレイヤーが既に存在する場合_既存のプレイヤーが既に存在する場合_既存のプレイヤーが既に存在する場合()
+    public async Task CancellationToken対応_FindByIdAsync()
     {
-        var now = DateTime.UtcNow;
         var repository = new InMemoryGameRepository();
-        var gameId = new GameId("123456");
-        var settings = new GameSettings(60, 3, 4);
-        var creatorName = new PlayerName("テスト作成者");
-        var creatorId = new PlayerId("creator123");
-        var creator = new Player(creatorId, creatorName, PlayerStatus.NotReady, false, false);
-        var initialTurn = Turn.CreateInitial(creator.Id, settings.TimeLimit);
-        var initialRound = Round.CreateInitial(initialTurn, now);
-        var game = new Game(gameId, settings, GameStatus.Waiting, initialRound, new[] { creator }, new List<ScoreHistory>(), now, now);
+        var game = CreateTestGame("123456", "テスト作成者");
         await repository.SaveAsync(game);
+        var cancellationTokenSource = new CancellationTokenSource();
 
-        var newPlayerName = "既存のプレイヤー";
-        var newPlayerId = new PlayerId("existingPlayer123");
-        var newPlayer = new Player(newPlayerId, new PlayerName(newPlayerName), PlayerStatus.NotReady, false, false);
+        var foundGame = await repository.FindByIdAsync(game.Id, cancellationTokenSource.Token);
 
-        game.AddPlayer(newPlayer, now);
-        Assert.Equal(2, game.Players.Count);
-        Assert.Contains(game.Players, p => p.Id.Value == newPlayerId.Value);
-        Assert.Contains(game.Players, p => p.Name.Value == newPlayerName);
+        Assert.NotNull(foundGame);
+        Assert.Equal(game.Id, foundGame.Id);
+    }
+
+    [Fact]
+    public async Task CancellationToken対応_FindAllAsync()
+    {
+        var repository = new InMemoryGameRepository();
+        var game1 = CreateTestGame("123456", "プレイヤー1");
+        var game2 = CreateTestGame("654321", "プレイヤー2");
+        await repository.SaveAsync(game1);
+        await repository.SaveAsync(game2);
+        var cancellationTokenSource = new CancellationTokenSource();
+
+        var allGames = await repository.FindAllAsync(cancellationTokenSource.Token);
+
+        Assert.Equal(2, allGames.Count());
+    }
+
+    [Fact]
+    public async Task CancellationToken対応_DeleteAsync()
+    {
+        var repository = new InMemoryGameRepository();
+        var game = CreateTestGame("123456", "テスト作成者");
+        await repository.SaveAsync(game);
+        var cancellationTokenSource = new CancellationTokenSource();
+
+        await repository.DeleteAsync(game.Id, cancellationTokenSource.Token);
+
+        var deletedGame = await repository.FindByIdAsync(game.Id);
+        Assert.Null(deletedGame);
     }
 }

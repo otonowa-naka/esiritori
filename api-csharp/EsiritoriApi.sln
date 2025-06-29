@@ -11,7 +11,15 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EsiritoriApi.Application", 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EsiritoriApi.Infrastructure", "EsiritoriApi.Infrastructure\EsiritoriApi.Infrastructure.csproj", "{33B548E3-31F8-484B-968A-BA27AFE29985}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EsiritoriApi.Tests", "EsiritoriApi.Tests\EsiritoriApi.Tests.csproj", "{2AAE1E33-2DC4-4D4E-96EC-D1D07EEFA0E6}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EsiritoriApi.Domain.Tests", "EsiritoriApi.Domain.Tests\EsiritoriApi.Domain.Tests.csproj", "{3904437E-A42E-4AE7-A13A-68D302E360CC}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EsiritoriApi.Application.Tests", "EsiritoriApi.Application.Tests\EsiritoriApi.Application.Tests.csproj", "{D03E2EB0-D558-4FB5-8E0B-2E7AA7010AD4}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EsiritoriApi.Infrastructure.Tests", "EsiritoriApi.Infrastructure.Tests\EsiritoriApi.Infrastructure.Tests.csproj", "{081B29D8-7A96-4A6D-AFB6-961737A17125}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EsiritoriApi.Api.Tests", "EsiritoriApi.Api.Tests\EsiritoriApi.Api.Tests.csproj", "{D9623A01-B6D5-4BAB-B5D0-F692750BC0A3}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EsiritoriApi.Integration.Tests", "EsiritoriApi.Integration.Tests\EsiritoriApi.Integration.Tests.csproj", "{00053455-EE52-4EFB-973D-A2DB87AFA791}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -38,9 +46,25 @@ Global
 		{33B548E3-31F8-484B-968A-BA27AFE29985}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{33B548E3-31F8-484B-968A-BA27AFE29985}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{33B548E3-31F8-484B-968A-BA27AFE29985}.Release|Any CPU.Build.0 = Release|Any CPU
-		{2AAE1E33-2DC4-4D4E-96EC-D1D07EEFA0E6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{2AAE1E33-2DC4-4D4E-96EC-D1D07EEFA0E6}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{2AAE1E33-2DC4-4D4E-96EC-D1D07EEFA0E6}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{2AAE1E33-2DC4-4D4E-96EC-D1D07EEFA0E6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3904437E-A42E-4AE7-A13A-68D302E360CC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3904437E-A42E-4AE7-A13A-68D302E360CC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3904437E-A42E-4AE7-A13A-68D302E360CC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3904437E-A42E-4AE7-A13A-68D302E360CC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D03E2EB0-D558-4FB5-8E0B-2E7AA7010AD4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D03E2EB0-D558-4FB5-8E0B-2E7AA7010AD4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D03E2EB0-D558-4FB5-8E0B-2E7AA7010AD4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D03E2EB0-D558-4FB5-8E0B-2E7AA7010AD4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{081B29D8-7A96-4A6D-AFB6-961737A17125}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{081B29D8-7A96-4A6D-AFB6-961737A17125}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{081B29D8-7A96-4A6D-AFB6-961737A17125}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{081B29D8-7A96-4A6D-AFB6-961737A17125}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D9623A01-B6D5-4BAB-B5D0-F692750BC0A3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D9623A01-B6D5-4BAB-B5D0-F692750BC0A3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D9623A01-B6D5-4BAB-B5D0-F692750BC0A3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D9623A01-B6D5-4BAB-B5D0-F692750BC0A3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{00053455-EE52-4EFB-973D-A2DB87AFA791}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{00053455-EE52-4EFB-973D-A2DB87AFA791}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{00053455-EE52-4EFB-973D-A2DB87AFA791}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{00053455-EE52-4EFB-973D-A2DB87AFA791}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
