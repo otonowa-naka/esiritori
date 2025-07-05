@@ -47,7 +47,7 @@ services:
   api-mock:
     container_name: esiritori-api-mock
     build:
-      context: ./backend/nodejs
+      context: ./frontend/mock
       dockerfile: Dockerfile
     ports:
       - "3001:3001"

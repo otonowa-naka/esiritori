@@ -64,7 +64,7 @@ pnpm dev
 
 1. APIディレクトリに移動:
 ```bash
-cd backend/nodejs
+cd frontend/mock
 ```
 
 2. 依存関係をインストール:
@@ -81,7 +81,7 @@ npm run dev
 
 1. C# APIディレクトリに移動:
 ```bash
-cd backend/csharp
+cd backend
 ```
 
 2. 依存関係を復元:
@@ -129,12 +129,12 @@ cd frontend && pnpm dev
 
 3. **APIモック**:
 ```bash
-cd backend/nodejs && npm run dev
+cd frontend/mock && npm run dev
 ```
 
 4. **C# API** (オプション):
 ```bash
-cd backend/csharp && dotnet run --project EsiritoriApi.Api
+cd backend && dotnet run --project EsiritoriApi.Api
 ```
 
 ## 🧪 テスト手順
@@ -162,19 +162,19 @@ pnpm lint
 
 1. **全テスト実行**:
 ```bash
-cd backend/csharp
+cd backend
 dotnet test
 ```
 
 2. **カバレッジ付きテスト実行**:
 ```bash
-cd backend/csharp
+cd backend
 dotnet test --collect:"XPlat Code Coverage"
 ```
 
 3. **特定のテストクラス実行**:
 ```bash
-cd backend/csharp
+cd backend
 dotnet test --filter "ClassName=GameTests"
 ```
 
@@ -190,7 +190,7 @@ dotnet test --filter "ClassName=GameTests"
 **層別テスト実行:**
 ```bash
 # 特定の層のテストを実行
-cd backend/csharp
+cd backend
 dotnet test EsiritoriApi.Domain.Tests/
 dotnet test EsiritoriApi.Application.Tests/
 dotnet test EsiritoriApi.Infrastructure.Tests/
@@ -210,20 +210,19 @@ curl http://localhost:3001/api/games
 
 ```
 esiritori/
-├── backend/               # バックエンドコンポーネント
-│   ├── csharp/            # .NET 8.0 C# API
-│   │   ├── EsiritoriApi.Api/          # Web API層
-│   │   ├── EsiritoriApi.Application/  # アプリケーション層
-│   │   ├── EsiritoriApi.Domain/       # ドメイン層
-│   │   ├── EsiritoriApi.Infrastructure/ # インフラ層
-│   │   ├── EsiritoriApi.Domain.Tests/        # ドメイン層テスト
-│   │   ├── EsiritoriApi.Application.Tests/   # アプリケーション層テスト
-│   │   ├── EsiritoriApi.Infrastructure.Tests/ # インフラ層テスト
-│   │   ├── EsiritoriApi.Api.Tests/          # API層テスト
-│   │   └── EsiritoriApi.Integration.Tests/  # 統合テスト
-│   └── nodejs/            # Node.js APIモック
+├── backend/               # .NET 8.0 C# API
+│   ├── EsiritoriApi.Api/          # Web API層
+│   ├── EsiritoriApi.Application/  # アプリケーション層
+│   ├── EsiritoriApi.Domain/       # ドメイン層
+│   ├── EsiritoriApi.Infrastructure/ # インフラ層
+│   ├── EsiritoriApi.Domain.Tests/        # ドメイン層テスト
+│   ├── EsiritoriApi.Application.Tests/   # アプリケーション層テスト
+│   ├── EsiritoriApi.Infrastructure.Tests/ # インフラ層テスト
+│   ├── EsiritoriApi.Api.Tests/          # API層テスト
+│   └── EsiritoriApi.Integration.Tests/  # 統合テスト
 ├── frontend/              # Next.js フロントエンド
 │   ├── src/               # フロントエンドソース
+│   ├── mock/              # Node.js APIモック
 │   ├── package.json       # フロントエンド依存関係
 │   └── Dockerfile.dev     # フロントエンド開発用Dockerfile
 ├── design/                # 設計ドキュメント

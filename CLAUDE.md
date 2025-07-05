@@ -39,7 +39,7 @@ pnpm lint
 ### C# API
 ```bash
 # Navigate to C# project
-cd backend/csharp
+cd backend
 
 # Restore dependencies
 dotnet restore
@@ -65,10 +65,11 @@ dotnet test --filter "Category=ドメインモデル"
 
 ### API Mock (Node.js)
 ```bash
-cd backend/nodejs
+cd frontend/mock
 npm install
 npm run dev  # Development server with nodemon
 npm start    # Production server
+npm run generate  # Generate mock server from OpenAPI spec
 ```
 
 ### Docker Environment
@@ -89,7 +90,7 @@ docker compose down
 The C# API follows Clean Architecture with Domain-Driven Design:
 
 ```
-backend/csharp/
+backend/
 ├── EsiritoriApi.Domain/          # Domain layer - business entities and rules
 │   ├── Entities/                 # Business entities (Game, Player)
 │   └── ValueObjects/             # Immutable domain values
@@ -190,7 +191,7 @@ Key directories:
 - `design/` - System design documentation and specifications
 - `.env.local` - Environment configuration
 - `docker-compose.yml` - Service orchestration
-- `backend/csharp/EsiritoriApi.sln` - C# solution file
+- `backend/EsiritoriApi.sln` - C# solution file
 
 ## Service URLs (Docker)
 
