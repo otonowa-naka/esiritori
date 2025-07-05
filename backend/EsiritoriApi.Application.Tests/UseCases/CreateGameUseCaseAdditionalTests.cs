@@ -1,7 +1,7 @@
 namespace EsiritoriApi.Application.Tests.UseCases;
 
 using EsiritoriApi.Application.DTOs;
-using EsiritoriApi.Application.Interfaces;
+
 using EsiritoriApi.Application.UseCases;
 using EsiritoriApi.Domain.Game;
 using Moq;

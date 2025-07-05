@@ -2,7 +2,7 @@ namespace EsiritoriApi.Tests.Api.Controllers;
 
 using EsiritoriApi.Api.Controllers;
 using EsiritoriApi.Application.DTOs;
-using EsiritoriApi.Application.Interfaces;
+
 using EsiritoriApi.Application.UseCases;
 using Microsoft.AspNetCore.Mvc;
 using Moq;

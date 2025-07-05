@@ -24,7 +24,7 @@
 - クリーンアーキテクチャに従い、以下の層を意識して実装
   - `Usecase（Application層）`
   - `Domain（Entity, ValueObject, DomainService）`
-  - `Interface（Controller, Presenter, Repository interfaceなど）`
+  - `Interface（Controller, Presenter）`
   - `Infrastructure（DB, API, etc）`
 
 ### 入出力
@@ -261,6 +261,42 @@ public async Task<ActionResult<CreateGameResponse>> CreateGame([FromBody] Create
     {
         return StatusCode(500, new { error = "内部サーバーエラーが発生しました", details = ex.Message });
     }
+}
+```
+
+### Repository Interface の配置ルール
+
+#### 1. 配置場所
+**✅ 推奨**
+```
+Domain/
+└── Game/
+    ├── IGameRepository.cs    // リポジトリインターフェースはドメイン層のエンティティと同じディレクトリに配置
+    ├── Game.cs              // エンティティ
+    └── ValueObjects/
+        └── GameId.cs
+```
+
+**❌ 禁止**
+```
+Domain/
+└── Interfaces/              // 汎用のInterfacesディレクトリは使用しない
+    └── IGameRepository.cs
+```
+
+#### 2. 理由
+- **凝集性**: リポジトリインターフェースは対応するエンティティと密接に関連するため
+- **可読性**: エンティティとリポジトリが同じディレクトリにあることで関係が明確
+- **DDD準拠**: ドメインオブジェクトの責務として位置付ける
+
+#### 3. 名前空間
+```csharp
+namespace EsiritoriApi.Domain.Game;  // エンティティと同じ名前空間
+
+public interface IGameRepository
+{
+    Task SaveAsync(Game game, CancellationToken cancellationToken = default);
+    Task<Game?> FindByIdAsync(GameId id, CancellationToken cancellationToken = default);
 }
 ```
 

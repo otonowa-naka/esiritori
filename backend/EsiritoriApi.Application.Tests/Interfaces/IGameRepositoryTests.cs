@@ -1,6 +1,6 @@
 namespace EsiritoriApi.Application.Tests.Interfaces;
 
-using EsiritoriApi.Application.Interfaces;
+
 using EsiritoriApi.Domain.Game;
 using EsiritoriApi.Domain.Game.Entities;
 using EsiritoriApi.Domain.Game.ValueObjects;

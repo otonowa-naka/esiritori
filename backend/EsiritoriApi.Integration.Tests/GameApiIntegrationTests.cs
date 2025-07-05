@@ -1,7 +1,7 @@
 namespace EsiritoriApi.Tests.Integration;
 
 using EsiritoriApi.Application.DTOs;
-using EsiritoriApi.Application.Interfaces;
+
 using EsiritoriApi.Domain.Game;
 using EsiritoriApi.Domain.Game.Entities;
 using EsiritoriApi.Domain.Game.ValueObjects;

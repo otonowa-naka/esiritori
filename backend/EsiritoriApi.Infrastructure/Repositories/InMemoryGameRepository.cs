@@ -1,6 +1,6 @@
 namespace EsiritoriApi.Infrastructure.Repositories;
 
-using EsiritoriApi.Application.Interfaces;
+
 using EsiritoriApi.Domain.Game;
 using EsiritoriApi.Domain.Game.ValueObjects;
 using System.Collections.Concurrent;
