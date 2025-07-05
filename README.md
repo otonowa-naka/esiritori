@@ -45,12 +45,17 @@ docker compose up -d
 
 #### フロントエンド
 
-1. 依存関係をインストール:
+1. フロントエンドディレクトリに移動:
+```bash
+cd frontend
+```
+
+2. 依存関係をインストール:
 ```bash
 pnpm install
 ```
 
-2. 開発サーバーを起動:
+3. 開発サーバーを起動:
 ```bash
 pnpm dev
 ```
@@ -59,7 +64,7 @@ pnpm dev
 
 1. APIディレクトリに移動:
 ```bash
-cd api
+cd backend/nodejs
 ```
 
 2. 依存関係をインストール:
@@ -76,7 +81,7 @@ npm run dev
 
 1. C# APIディレクトリに移動:
 ```bash
-cd api-csharp
+cd backend/csharp
 ```
 
 2. 依存関係を復元:
@@ -119,17 +124,17 @@ docker run --rm -p 4566:4566 localstack/localstack
 
 2. **フロントエンド**:
 ```bash
-pnpm dev
+cd frontend && pnpm dev
 ```
 
 3. **APIモック**:
 ```bash
-cd api && npm run dev
+cd backend/nodejs && npm run dev
 ```
 
 4. **C# API** (オプション):
 ```bash
-cd api-csharp && dotnet run --project EsiritoriApi.Api
+cd backend/csharp && dotnet run --project EsiritoriApi.Api
 ```
 
 ## 🧪 テスト手順
@@ -140,11 +145,13 @@ cd api-csharp && dotnet run --project EsiritoriApi.Api
 
 **型チェック**:
 ```bash
+cd frontend
 npx tsc --noEmit
 ```
 
 **リント**:
 ```bash
+cd frontend
 pnpm lint
 # 注意: 依存関係をインストール後に実行してください
 ```
@@ -155,17 +162,19 @@ pnpm lint
 
 1. **全テスト実行**:
 ```bash
-cd api-csharp
+cd backend/csharp
 dotnet test
 ```
 
 2. **カバレッジ付きテスト実行**:
 ```bash
+cd backend/csharp
 dotnet test --collect:"XPlat Code Coverage"
 ```
 
 3. **特定のテストクラス実行**:
 ```bash
+cd backend/csharp
 dotnet test --filter "ClassName=GameTests"
 ```
 
@@ -181,6 +190,7 @@ dotnet test --filter "ClassName=GameTests"
 **層別テスト実行:**
 ```bash
 # 特定の層のテストを実行
+cd backend/csharp
 dotnet test EsiritoriApi.Domain.Tests/
 dotnet test EsiritoriApi.Application.Tests/
 dotnet test EsiritoriApi.Infrastructure.Tests/
@@ -200,24 +210,26 @@ curl http://localhost:3001/api/games
 
 ```
 esiritori/
-├── src/                    # Next.js フロントエンドソース
-├── api/                    # Node.js APIモック
-├── api-csharp/            # .NET 8.0 C# API
-│   ├── EsiritoriApi.Api/          # Web API層
-│   ├── EsiritoriApi.Application/  # アプリケーション層
-│   ├── EsiritoriApi.Domain/       # ドメイン層
-│   ├── EsiritoriApi.Infrastructure/ # インフラ層
-│   ├── EsiritoriApi.Domain.Tests/        # ドメイン層テスト
-│   ├── EsiritoriApi.Application.Tests/   # アプリケーション層テスト
-│   ├── EsiritoriApi.Infrastructure.Tests/ # インフラ層テスト
-│   ├── EsiritoriApi.Api.Tests/          # API層テスト
-│   └── EsiritoriApi.Integration.Tests/  # 統合テスト
+├── backend/               # バックエンドコンポーネント
+│   ├── csharp/            # .NET 8.0 C# API
+│   │   ├── EsiritoriApi.Api/          # Web API層
+│   │   ├── EsiritoriApi.Application/  # アプリケーション層
+│   │   ├── EsiritoriApi.Domain/       # ドメイン層
+│   │   ├── EsiritoriApi.Infrastructure/ # インフラ層
+│   │   ├── EsiritoriApi.Domain.Tests/        # ドメイン層テスト
+│   │   ├── EsiritoriApi.Application.Tests/   # アプリケーション層テスト
+│   │   ├── EsiritoriApi.Infrastructure.Tests/ # インフラ層テスト
+│   │   ├── EsiritoriApi.Api.Tests/          # API層テスト
+│   │   └── EsiritoriApi.Integration.Tests/  # 統合テスト
+│   └── nodejs/            # Node.js APIモック
+├── frontend/              # Next.js フロントエンド
+│   ├── src/               # フロントエンドソース
+│   ├── package.json       # フロントエンド依存関係
+│   └── Dockerfile.dev     # フロントエンド開発用Dockerfile
 ├── design/                # 設計ドキュメント
 ├── docs/                  # 開発ガイドライン
 │   └── Coderule.md        # コーディングルール
 ├── docker-compose.yml     # Docker Compose設定
-├── Dockerfile.dev         # フロントエンド開発用Dockerfile
-├── .eslintrc.json         # ESLint設定
 ├── .gitignore             # Git除外設定
 └── .env.local            # 環境変数設定
 ```

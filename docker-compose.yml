@@ -24,7 +24,7 @@ services:
   frontend:
     container_name: esiritori-frontend
     build:
-      context: .
+      context: ./frontend
       dockerfile: Dockerfile.dev
     ports:
       - "3000:3000"
@@ -34,7 +34,7 @@ services:
       - NEXT_PUBLIC_WS_URL=ws://localhost:3001
       - LOCALSTACK_ENDPOINT=http://localstack:4566
     volumes:
-      - .:/app
+      - ./frontend:/app
       - /app/node_modules
       - /app/.next
     depends_on:
@@ -47,7 +47,7 @@ services:
   api-mock:
     container_name: esiritori-api-mock
     build:
-      context: ./api
+      context: ./backend/nodejs
       dockerfile: Dockerfile
     ports:
       - "3001:3001"

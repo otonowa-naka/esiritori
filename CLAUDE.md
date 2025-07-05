@@ -15,6 +15,9 @@ Esiritori is a real-time multiplayer drawing guessing game with three main compo
 
 ### Frontend (Next.js)
 ```bash
+# Navigate to frontend project
+cd frontend
+
 # Install dependencies
 pnpm install
 
@@ -36,7 +39,7 @@ pnpm lint
 ### C# API
 ```bash
 # Navigate to C# project
-cd api-csharp
+cd backend/csharp
 
 # Restore dependencies
 dotnet restore
@@ -62,7 +65,7 @@ dotnet test --filter "Category=ドメインモデル"
 
 ### API Mock (Node.js)
 ```bash
-cd api
+cd backend/nodejs
 npm install
 npm run dev  # Development server with nodemon
 npm start    # Production server
@@ -86,7 +89,7 @@ docker compose down
 The C# API follows Clean Architecture with Domain-Driven Design:
 
 ```
-api-csharp/
+backend/csharp/
 ├── EsiritoriApi.Domain/          # Domain layer - business entities and rules
 │   ├── Entities/                 # Business entities (Game, Player)
 │   └── ValueObjects/             # Immutable domain values
@@ -170,9 +173,9 @@ Next.js application with:
 - WebSocket integration for real-time features
 
 Key directories:
-- `src/app/` - Next.js App Router pages
-- `src/components/` - Reusable React components
-- `src/lib/` - Utility functions and API clients
+- `frontend/src/app/` - Next.js App Router pages
+- `frontend/src/components/` - Reusable React components
+- `frontend/src/lib/` - Utility functions and API clients
 
 ## Development Workflow
 
@@ -187,7 +190,7 @@ Key directories:
 - `design/` - System design documentation and specifications
 - `.env.local` - Environment configuration
 - `docker-compose.yml` - Service orchestration
-- `api-csharp/EsiritoriApi.sln` - C# solution file
+- `backend/csharp/EsiritoriApi.sln` - C# solution file
 
 ## Service URLs (Docker)
 
