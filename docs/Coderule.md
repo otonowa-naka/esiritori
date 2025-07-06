@@ -832,3 +832,76 @@ public static Player CreateInitial(PlayerName name)
 - [ ] 生成ルールがドメイン層に集約されている
 - [ ] テストでもファクトリメソッドを使用している
 
+---
+
+### DTOマッピングのルール
+
+#### 1. MapToResponse関数はDTO側に定義する
+- **❌ 禁止**: UseCaseクラスでMapToResponse関数を定義
+- **✅ 推奨**: DTO自体にFromEntity/FromDomainファクトリメソッドを定義
+
+**❌ 禁止例**
+```csharp
+// CreateGameUseCase.cs
+private static CreateGameResponse MapToResponse(Game game)
+{
+    return new CreateGameResponse
+    {
+        Game = new GameDto
+        {
+            Id = game.Id.Value,
+            Status = game.Status.ToString(),
+            // ... マッピングロジック
+        }
+    };
+}
+```
+
+**✅ 推奨例**
+```csharp
+// CreateGameResponse.cs
+public static CreateGameResponse FromGame(Game game)
+{
+    return new CreateGameResponse
+    {
+        Game = GameDto.FromGame(game),
+        Player = PlayerDto.FromPlayer(game.Players.First())
+    };
+}
+
+// GameDto.cs
+public static GameDto FromGame(Game game)
+{
+    return new GameDto
+    {
+        Id = game.Id.Value,
+        Status = game.Status.ToString(),
+        Settings = GameSettingsDto.FromGameSettings(game.Settings),
+        CurrentRound = RoundDto.FromRound(game.CurrentRound),
+        Players = game.Players.Select(PlayerDto.FromPlayer).ToList(),
+        ScoreRecords = game.ScoreHistories.Select(ScoreRecordDto.FromScoreHistory).ToList()
+    };
+}
+```
+
+#### 2. 階層化されたDTOマッピング
+- **複合DTOの場合**: 上位DTOから下位DTOのファクトリメソッドを呼び出す
+- **単純DTOの場合**: 直接ドメインオブジェクトから値をマッピング
+
+#### 3. ファクトリメソッドの命名規則
+- **FromXXX**: ドメインオブジェクトからDTOを生成（例：`FromGame`, `FromPlayer`）
+- **ToXXX**: DTOからドメインオブジェクトを生成（例：`ToGameSettings`）
+
+#### 4. 理由
+- **責任の明確化**: DTOへの変換はDTO自体が責任を持つ
+- **再利用性**: 他のUseCaseでも同じDTOを使う際に再利用可能
+- **重複コード除去**: 同じマッピングロジックの重複を防ぐ
+- **保守性**: マッピングロジックの変更がDTO側で完結
+
+#### 5. 実装チェックリスト
+- [ ] UseCaseにMapToResponse関数がない
+- [ ] DTOにFromXXXファクトリメソッドが実装されている
+- [ ] 複合DTOで階層化されたマッピングが実装されている
+- [ ] マッピングロジックが重複していない
+- [ ] テストでファクトリメソッドが使用されている
+

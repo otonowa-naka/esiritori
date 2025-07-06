@@ -35,51 +35,7 @@ public class StartGameUseCase : IStartGameUseCase
 
         await _gameRepository.SaveAsync(game, cancellationToken);
 
-        return MapToResponse(game);
+        return StartGameResponse.FromGame(game);
     }
 
-    private static StartGameResponse MapToResponse(Game game)
-    {
-        return new StartGameResponse
-        {
-            Game = new GameDto
-            {
-                Id = game.Id.Value,
-                Status = game.Status.ToString(),
-                Settings = new GameSettingsDto
-                {
-                    TimeLimit = game.Settings.TimeLimit,
-                    RoundCount = game.Settings.RoundCount,
-                    PlayerCount = game.Settings.PlayerCount
-                },
-                CurrentRound = new RoundDto
-                {
-                    RoundNumber = game.CurrentRound.RoundNumber,
-                    CurrentTurn = new TurnDto
-                    {
-                        TurnNumber = game.CurrentRound.CurrentTurn.TurnNumber,
-                        Status = game.CurrentRound.CurrentTurn.Status.ToString(),
-                        DrawerId = game.CurrentRound.CurrentTurn.DrawerId.Value,
-                        Answer = game.CurrentRound.CurrentTurn.Answer.HasValue ? game.CurrentRound.CurrentTurn.Answer.Value.Value : string.Empty
-                    }
-                },
-                Players = game.Players.Select(player => new PlayerDto
-                {
-                    Id = player.Id.Value,
-                    Name = player.Name.Value,
-                    IsReady = player.IsReady,
-                    IsDrawer = player.IsDrawer
-                }).ToList(),
-                ScoreRecords = game.ScoreHistories.Select(score => new ScoreRecordDto
-                {
-                    PlayerId = score.PlayerId.Value,
-                    RoundNumber = score.RoundNumber,
-                    TurnNumber = score.TurnNumber,
-                    Points = score.Points,
-                    Reason = score.Reason.ToString(),
-                    Timestamp = score.Timestamp
-                }).ToList()
-            }
-        };
-    }
 } 
