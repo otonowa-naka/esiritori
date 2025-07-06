@@ -30,9 +30,9 @@ public sealed class ScoreHistory : IEquatable<ScoreHistory>
             throw new DomainErrorException(DomainErrorCodes.ScoreHistory.InvalidTurnNumber, "ターン番号は1から10の間で設定してください");
         }
 
-        if (points < 1)
+        if (points == 0)
         {
-            throw new DomainErrorException(DomainErrorCodes.ScoreHistory.InvalidPoints, "ポイントは1以上の整数である必要があります");
+            throw new DomainErrorException(DomainErrorCodes.ScoreHistory.InvalidPoints, "ポイントは0以外の整数である必要があります");
         }
 
         PlayerId = playerId ?? throw new DomainErrorException(DomainErrorCodes.ScoreHistory.InvalidPlayerId, "プレイヤーIDはnullにできません");

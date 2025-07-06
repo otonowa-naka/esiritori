@@ -62,6 +62,50 @@ services:
     networks:
       - esiritori-network
 
+  # DynamoDB テーブル初期化
+  dynamodb-init:
+    container_name: esiritori-dynamodb-init
+    image: amazon/aws-cli:latest
+    volumes:
+      - ./infrastructure/schemas:/schemas
+    environment:
+      - AWS_REGION=ap-northeast-1
+      - AWS_ACCESS_KEY_ID=test
+      - AWS_SECRET_ACCESS_KEY=test
+    depends_on:
+      - localstack
+    networks:
+      - esiritori-network
+    entrypoint: >
+      /bin/sh -c "
+        echo 'Installing jq...';
+        yum update -y && yum install -y jq;
+        echo 'Waiting for LocalStack to be ready...';
+        until aws dynamodb list-tables --endpoint-url http://localstack:4566 --region ap-northeast-1 > /dev/null 2>&1; do
+          echo 'Waiting for LocalStack DynamoDB...';
+          sleep 2;
+        done;
+        echo 'LocalStack is ready, creating tables...';
+        /schemas/create-tables.sh http://localstack:4566 ap-northeast-1 /schemas/dynamodb-table-definitions.json;
+        echo 'Tables created successfully!';
+      "
+
+  # DynamoDB 管理UI - LocalStackのDynamoDBを表示・管理
+  dynamodb-admin:
+    container_name: esiritori-dynamodb-admin
+    image: aaronshaf/dynamodb-admin:latest
+    ports:
+      - "8001:8001"
+    environment:
+      - DYNAMO_ENDPOINT=http://localstack:4566
+      - AWS_REGION=ap-northeast-1
+      - AWS_ACCESS_KEY_ID=test
+      - AWS_SECRET_ACCESS_KEY=test
+    depends_on:
+      - dynamodb-init
+    networks:
+      - esiritori-network
+
 networks:
   esiritori-network:
     driver: bridge

@@ -2,4 +2,9 @@
   <PropertyGroup>
     <Exclude>[EsiritoriApi.Application*]*</Exclude>
   </PropertyGroup>
+
+  <!-- テスト実行時の環境変数設定 -->
+  <PropertyGroup Condition="'$(MSBuildProjectName)' == 'EsiritoriApi.Infrastructure.Tests'">
+    <RunSettingsFilePath>$(MSBuildThisFileDirectory)../test.runsettings</RunSettingsFilePath>
+  </PropertyGroup>
 </Project> 

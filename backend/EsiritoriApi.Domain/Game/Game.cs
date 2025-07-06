@@ -99,7 +99,7 @@ public sealed class Game : IEquatable<Game>
         Players = updatedPlayers.AsReadOnly();
         
         // 新規Roundを作成（最初の描画者で初期Turnを作成）
-        var initialTurn = Turn.CreateInitial(firstDrawer.Id, Settings.TimeLimit);
+        var initialTurn = Turn.CreateInitial(firstDrawer.Id, Settings.TimeLimit, now);
         var newRound = Round.CreateInitial(initialTurn, now);
         CurrentRound = newRound;
         
@@ -156,7 +156,7 @@ public sealed class Game : IEquatable<Game>
     public static Game CreateNew(GameId id, GameSettings settings, Player initialPlayer, DateTime createdAt)
     {
         var players = new List<Player> { initialPlayer };
-        var initialTurn = Turn.CreateInitial(initialPlayer.Id, settings.TimeLimit);
+        var initialTurn = Turn.CreateInitial(initialPlayer.Id, settings.TimeLimit, createdAt);
         var initialRound = Round.CreateInitial(initialTurn, createdAt);
         return new Game(id, settings, GameStatus.Waiting, initialRound, players, new List<ScoreHistory>(), createdAt, createdAt);
     }

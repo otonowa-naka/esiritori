@@ -64,14 +64,15 @@ public sealed class TurnTests
     public void CreateInitialが正しく動作する()
     {
         var drawerId = new PlayerId("drawer123");
-        var turn = Turn.CreateInitial(drawerId, 60);
+        var startedAt = DateTime.UtcNow;
+        var turn = Turn.CreateInitial(drawerId, 60, startedAt);
 
         Assert.Equal(1, turn.TurnNumber);
         Assert.Equal(drawerId, turn.DrawerId);
         Assert.False(turn.Answer.HasValue);
         Assert.Equal(TurnStatus.SettingAnswer, turn.Status);
         Assert.Equal(60, turn.TimeLimit);
-        Assert.Equal(DateTime.MinValue, turn.StartedAt);
+        Assert.Equal(startedAt, turn.StartedAt);
         Assert.False(turn.EndedAt.HasValue);
     }
 
@@ -79,7 +80,7 @@ public sealed class TurnTests
     public void SetAnswerAndStartDrawingが正しく動作する()
     {
         var drawerId = new PlayerId("drawer123");
-        var turn = Turn.CreateInitial(drawerId, 60);
+        var turn = Turn.CreateInitial(drawerId, 60, DateTime.UtcNow);
         var answer = new Answer("りんご");
         var startTime = DateTime.UtcNow;
 

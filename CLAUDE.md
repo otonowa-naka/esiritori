@@ -4,11 +4,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Esiritori is a real-time multiplayer drawing guessing game with three main components:
+Esiritori is a real-time multiplayer drawing guessing game with four main components:
 
 - **Frontend**: Next.js 15 + React 19 + TypeScript + Tailwind CSS
 - **API Mock**: Node.js + Express (for prototyping)
-- **C# API**: .NET 8.0 + Clean Architecture (main implementation)
+- **C# API**: .NET 8.0 + Clean Architecture + DynamoDB (main implementation)
 - **Infrastructure**: Docker Compose + LocalStack (AWS services mock)
 
 ## Development Commands
@@ -47,7 +47,7 @@ dotnet restore
 # Build solution
 dotnet build
 
-# Run API server
+# Run API server (requires DynamoDB)
 dotnet run --project EsiritoriApi.Api
 
 # Run all tests
@@ -61,6 +61,16 @@ dotnet test --filter "ClassName=GameTests"
 
 # Run tests by category
 dotnet test --filter "Category=ドメインモデル"
+```
+
+### DynamoDB Setup (LocalStack)
+```bash
+# Create DynamoDB table in LocalStack
+chmod +x scripts/create-dynamodb-table.sh
+./scripts/create-dynamodb-table.sh
+
+# Verify table creation
+aws dynamodb list-tables --endpoint-url http://localhost:4566 --region ap-northeast-1
 ```
 
 ### API Mock (Node.js)
@@ -83,6 +93,17 @@ docker compose logs -f
 # Stop services
 docker compose down
 ```
+
+**Included Services:**
+- **Frontend**: Next.js development server (port 3000)
+- **API Mock**: Node.js mock server (port 3001)  
+- **LocalStack**: AWS services mock including DynamoDB (port 4566)
+- **DynamoDB Admin UI**: Web interface for DynamoDB management (port 8001)
+
+**DynamoDB Management:**
+- Access DynamoDB Admin UI at http://localhost:8001
+- View tables, items, and perform CRUD operations
+- Connected to LocalStack DynamoDB automatically
 
 ## Architecture
 
@@ -198,6 +219,7 @@ Key directories:
 - Frontend: http://localhost:3000
 - API Mock: http://localhost:3001  
 - LocalStack: http://localhost:4566
+- DynamoDB Admin UI: http://localhost:8001
 
 ## Key Implementation Guidelines
 

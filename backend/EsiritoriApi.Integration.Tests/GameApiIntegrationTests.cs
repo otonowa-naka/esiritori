@@ -1,10 +1,10 @@
 namespace EsiritoriApi.Tests.Integration;
 
 using EsiritoriApi.Application.DTOs;
-
 using EsiritoriApi.Domain.Game;
 using EsiritoriApi.Domain.Game.Entities;
 using EsiritoriApi.Domain.Game.ValueObjects;
+using EsiritoriApi.Infrastructure.Repositories;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
@@ -17,13 +17,31 @@ public sealed class GameApiIntegrationTests : IClassFixture<WebApplicationFactor
 {
     private readonly WebApplicationFactory<Program> _factory;
     private readonly HttpClient _client;
-    private readonly IGameRepository _repository;
+    private static readonly InMemoryGameRepository _sharedRepository = new();
 
     public GameApiIntegrationTests(WebApplicationFactory<Program> factory)
     {
-        _factory = factory;
+        _factory = factory.WithWebHostBuilder(builder =>
+        {
+            builder.ConfigureServices(services =>
+            {
+                // Remove existing IGameRepository registration
+                var descriptor = services.SingleOrDefault(d => d.ServiceType == typeof(IGameRepository));
+                if (descriptor != null)
+                {
+                    services.Remove(descriptor);
+                }
+                
+                // Add shared singleton repository for testing
+                services.AddSingleton<IGameRepository>(_sharedRepository);
+            });
+        });
         _client = _factory.CreateClient();
-        _repository = _factory.Services.GetRequiredService<IGameRepository>();
+    }
+
+    private IGameRepository GetRepository()
+    {
+        return _sharedRepository;
     }
 
     [Fact]
@@ -296,14 +314,16 @@ public sealed class GameApiIntegrationTests : IClassFixture<WebApplicationFactor
         var createdGame = await createResponse.Content.ReadFromJsonAsync<CreateGameResponse>();
 
         // プレイヤーを追加して準備完了状態にする
-        var game = await _repository.FindByIdAsync(new GameId(createdGame!.Game.Id), CancellationToken.None);
+        var repository = GetRepository();
+        var game = await repository.FindByIdAsync(new GameId(createdGame!.Game.Id), CancellationToken.None);
+        Assert.NotNull(game);
         var player1Id = new PlayerId("integration_test_player1_start");
         var player1Name = new PlayerName("プレイヤー1");
         var player1 = new Player(player1Id, player1Name, PlayerStatus.NotReady, false, false);
-        game!.AddPlayer(player1, now);
+        game.AddPlayer(player1, now);
         game.UpdatePlayerReadyStatus(new PlayerId(createdGame.Player.Id), true, now);
         game.UpdatePlayerReadyStatus(player1Id, true, now);
-        await _repository.SaveAsync(game, CancellationToken.None);
+        await repository.SaveAsync(game, CancellationToken.None);
 
         // Act - ゲームを開始
         var startResponse = await _client.PostAsync($"/api/games/{createdGame.Game.Id}/start", null);
@@ -385,13 +405,15 @@ public sealed class GameApiIntegrationTests : IClassFixture<WebApplicationFactor
         var createdGame = await createResponse.Content.ReadFromJsonAsync<CreateGameResponse>();
 
         // プレイヤーを追加するが準備完了状態にしない
-        var game = await _repository.FindByIdAsync(new GameId(createdGame!.Game.Id), CancellationToken.None);
+        var repository = GetRepository();
+        var game = await repository.FindByIdAsync(new GameId(createdGame!.Game.Id), CancellationToken.None);
+        Assert.NotNull(game);
         var player1Id = new PlayerId("integration_test_player1_notready");
         var player1Name = new PlayerName("プレイヤー1");
         var player1 = new Player(player1Id, player1Name, PlayerStatus.NotReady, false, false);
-        game!.AddPlayer(player1, now);
+        game.AddPlayer(player1, now);
         // 準備完了状態にしない
-        await _repository.SaveAsync(game, CancellationToken.None);
+        await repository.SaveAsync(game, CancellationToken.None);
 
         // Act - ゲームを開始
         var startResponse = await _client.PostAsync($"/api/games/{createdGame.Game.Id}/start", null);

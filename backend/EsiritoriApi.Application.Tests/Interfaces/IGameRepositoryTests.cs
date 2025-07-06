@@ -88,7 +88,7 @@ public sealed class IGameRepositoryTests
         var playerId = new PlayerId("player1");
         var playerName = new PlayerName("テストプレイヤー");
         var creator = new Player(playerId, playerName, PlayerStatus.NotReady, false, false);
-        var initialTurn = Turn.CreateInitial(creator.Id, settings.TimeLimit);
+        var initialTurn = Turn.CreateInitial(creator.Id, settings.TimeLimit, DateTime.UtcNow);
         var initialRound = Round.CreateInitial(initialTurn, DateTime.UtcNow);
         return new Game(gameId, settings, GameStatus.Waiting, initialRound, new[] { creator }, new List<ScoreHistory>(), DateTime.UtcNow, DateTime.UtcNow);
     }

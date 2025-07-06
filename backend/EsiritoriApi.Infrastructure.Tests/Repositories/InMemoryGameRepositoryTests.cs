@@ -15,7 +15,7 @@ public sealed class InMemoryGameRepositoryTests
         var settings = new GameSettings(60, 3, 4);
         var playerId = creatorId ?? $"player_{gameId}";
         var creator = new Player(new PlayerId(playerId), new PlayerName(creatorName), PlayerStatus.NotReady, false, false);
-        var initialTurn = Turn.CreateInitial(creator.Id, settings.TimeLimit);
+        var initialTurn = Turn.CreateInitial(creator.Id, settings.TimeLimit, DateTime.UtcNow);
         var initialRound = Round.CreateInitial(initialTurn, DateTime.UtcNow);
         return new Game(id, settings, GameStatus.Waiting, initialRound, new[] { creator }, new List<ScoreHistory>(), DateTime.UtcNow, DateTime.UtcNow);
     }
@@ -29,7 +29,7 @@ public sealed class InMemoryGameRepositoryTests
         var creatorName = new PlayerName("テスト作成者");
         var creatorId = new PlayerId("creator123");
         var creator = new Player(creatorId, creatorName, PlayerStatus.NotReady, false, false);
-        var initialTurn = Turn.CreateInitial(creator.Id, settings.TimeLimit);
+        var initialTurn = Turn.CreateInitial(creator.Id, settings.TimeLimit, DateTime.UtcNow);
         var initialRound = Round.CreateInitial(initialTurn, DateTime.UtcNow);
         var game = new Game(gameId, settings, GameStatus.Waiting, initialRound, new[] { creator }, new List<ScoreHistory>(), DateTime.UtcNow, DateTime.UtcNow);
 
@@ -50,7 +50,7 @@ public sealed class InMemoryGameRepositoryTests
         var creatorName = new PlayerName("テスト作成者");
         var creatorId = new PlayerId("creator123");
         var creator = new Player(creatorId, creatorName, PlayerStatus.NotReady, false, false);
-        var initialTurn = Turn.CreateInitial(creator.Id, settings.TimeLimit);
+        var initialTurn = Turn.CreateInitial(creator.Id, settings.TimeLimit, DateTime.UtcNow);
         var initialRound = Round.CreateInitial(initialTurn, DateTime.UtcNow);
         var game = new Game(gameId, settings, GameStatus.Waiting, initialRound, new[] { creator }, new List<ScoreHistory>(), DateTime.UtcNow, DateTime.UtcNow);
         await repository.SaveAsync(game);
@@ -189,7 +189,7 @@ public sealed class InMemoryGameRepositoryTests
         var creatorName = new PlayerName("テスト作成者");
         var creatorId = new PlayerId("creator123");
         var creator = new Player(creatorId, creatorName, PlayerStatus.NotReady, false, false);
-        var initialTurn = Turn.CreateInitial(creator.Id, settings.TimeLimit);
+        var initialTurn = Turn.CreateInitial(creator.Id, settings.TimeLimit, DateTime.UtcNow);
         var initialRound = Round.CreateInitial(initialTurn, now);
         var game = new Game(gameId, settings, GameStatus.Waiting, initialRound, new[] { creator }, new List<ScoreHistory>(), now, now);
         await repository.SaveAsync(game);
@@ -214,7 +214,7 @@ public sealed class InMemoryGameRepositoryTests
         var creatorName = new PlayerName("テスト作成者");
         var creatorId = new PlayerId("creator123");
         var creator = new Player(creatorId, creatorName, PlayerStatus.NotReady, false, false);
-        var initialTurn = Turn.CreateInitial(creator.Id, settings.TimeLimit);
+        var initialTurn = Turn.CreateInitial(creator.Id, settings.TimeLimit, DateTime.UtcNow);
         var initialRound = Round.CreateInitial(initialTurn, now);
         var game = new Game(gameId, settings, GameStatus.Waiting, initialRound, new[] { creator }, new List<ScoreHistory>(), now, now);
         await repository.SaveAsync(game);

@@ -17,7 +17,7 @@ public sealed class GameTests
         var creatorName = new PlayerName("テストプレイヤー");
         var creatorId = new PlayerId("player123");
         var creator = new Player(creatorId, creatorName, PlayerStatus.NotReady, false, false);
-        var initialTurn = Turn.CreateInitial(creator.Id, settings.TimeLimit);
+        var initialTurn = Turn.CreateInitial(creator.Id, settings.TimeLimit, DateTime.UtcNow);
         var initialRound = Round.CreateInitial(initialTurn, DateTime.UtcNow);
         var game = new Game(gameId, settings, GameStatus.Waiting, initialRound, new[] { creator }, new List<ScoreHistory>(), DateTime.UtcNow, DateTime.UtcNow);
 
@@ -40,7 +40,7 @@ public sealed class GameTests
         var creatorName = new PlayerName("作成者");
         var creatorId = PlayerId.NewId();
         var creator = new Player(creatorId, creatorName, PlayerStatus.NotReady, false, false);
-        var initialTurn = Turn.CreateInitial(creator.Id, settings.TimeLimit);
+        var initialTurn = Turn.CreateInitial(creator.Id, settings.TimeLimit, DateTime.UtcNow);
         var initialRound = Round.CreateInitial(initialTurn, now);
         var game = new Game(gameId, settings, GameStatus.Waiting, initialRound, new[] { creator }, new List<ScoreHistory>(), now, now);
 
@@ -63,7 +63,7 @@ public sealed class GameTests
         var creatorName = new PlayerName("作成者");
         var creatorId = PlayerId.NewId();
         var creator = new Player(creatorId, creatorName, PlayerStatus.NotReady, false, false);
-        var initialTurn = Turn.CreateInitial(creator.Id, settings.TimeLimit);
+        var initialTurn = Turn.CreateInitial(creator.Id, settings.TimeLimit, DateTime.UtcNow);
         var initialRound = Round.CreateInitial(initialTurn, now);
         var game = new Game(gameId, settings, GameStatus.Waiting, initialRound, new[] { creator }, new List<ScoreHistory>(), now, now);
 
@@ -95,7 +95,7 @@ public sealed class GameTests
         var creatorName = new PlayerName("作成者");
         var creatorId = PlayerId.NewId();
         var creator = new Player(creatorId, creatorName, PlayerStatus.NotReady, false, false);
-        var initialTurn = Turn.CreateInitial(creator.Id, settings.TimeLimit);
+        var initialTurn = Turn.CreateInitial(creator.Id, settings.TimeLimit, DateTime.UtcNow);
         var initialRound = Round.CreateInitial(initialTurn, now);
         var game = new Game(gameId, settings, GameStatus.Waiting, initialRound, new[] { creator }, new List<ScoreHistory>(), now, now);
 
@@ -116,7 +116,7 @@ public sealed class GameTests
         var creatorName = new PlayerName("作成者");
         var creatorId = PlayerId.NewId();
         var creator = new Player(creatorId, creatorName, PlayerStatus.NotReady, false, false);
-        var initialTurn = Turn.CreateInitial(creator.Id, settings.TimeLimit);
+        var initialTurn = Turn.CreateInitial(creator.Id, settings.TimeLimit, DateTime.UtcNow);
         var initialRound = Round.CreateInitial(initialTurn, now);
         var game = new Game(gameId, settings, GameStatus.Waiting, initialRound, new[] { creator }, new List<ScoreHistory>(), now, now);
 
@@ -145,7 +145,7 @@ public sealed class GameTests
         var creatorName = new PlayerName("作成者");
         var creatorId = PlayerId.NewId();
         var creator = new Player(creatorId, creatorName, PlayerStatus.NotReady, false, false);
-        var initialTurn = Turn.CreateInitial(creator.Id, settings.TimeLimit);
+        var initialTurn = Turn.CreateInitial(creator.Id, settings.TimeLimit, DateTime.UtcNow);
         var initialRound = Round.CreateInitial(initialTurn, now);
         var game = new Game(gameId, settings, GameStatus.Waiting, initialRound, new[] { creator }, new List<ScoreHistory>(), now, now);
 
@@ -182,7 +182,7 @@ public sealed class GameTests
         var creatorName = new PlayerName("作成者");
         var creatorId = PlayerId.NewId();
         var creator = new Player(creatorId, creatorName, PlayerStatus.NotReady, false, false);
-        var initialTurn = Turn.CreateInitial(creator.Id, settings.TimeLimit);
+        var initialTurn = Turn.CreateInitial(creator.Id, settings.TimeLimit, DateTime.UtcNow);
         var initialRound = Round.CreateInitial(initialTurn, now);
         var game = new Game(gameId, settings, GameStatus.Waiting, initialRound, new[] { creator }, new List<ScoreHistory>(), now, now);
 
@@ -199,7 +199,7 @@ public sealed class GameTests
         var creatorName = new PlayerName("作成者");
         var creatorId = PlayerId.NewId();
         var creator = new Player(creatorId, creatorName, PlayerStatus.NotReady, false, false);
-        var initialTurn = Turn.CreateInitial(creator.Id, settings.TimeLimit);
+        var initialTurn = Turn.CreateInitial(creator.Id, settings.TimeLimit, DateTime.UtcNow);
         var initialRound = Round.CreateInitial(initialTurn, now);
         var game = new Game(gameId, settings, GameStatus.Waiting, initialRound, new[] { creator }, new List<ScoreHistory>(), now, now);
 
@@ -223,7 +223,7 @@ public sealed class GameTests
         var creatorName = new PlayerName("作成者");
         var creatorId = PlayerId.NewId();
         var creator = new Player(creatorId, creatorName, PlayerStatus.NotReady, false, false);
-        var initialTurn = Turn.CreateInitial(creator.Id, settings.TimeLimit);
+        var initialTurn = Turn.CreateInitial(creator.Id, settings.TimeLimit, DateTime.UtcNow);
         var initialRound = Round.CreateInitial(initialTurn, now);
         var game = new Game(gameId, settings, GameStatus.Playing, initialRound, new[] { creator }, new List<ScoreHistory>(), now, now);
 
@@ -240,7 +240,7 @@ public sealed class GameTests
         var creatorName = new PlayerName("作成者");
         var creatorId = PlayerId.NewId();
         var creator = new Player(creatorId, creatorName, PlayerStatus.NotReady, false, false);
-        var initialTurn = Turn.CreateInitial(creator.Id, settings.TimeLimit);
+        var initialTurn = Turn.CreateInitial(creator.Id, settings.TimeLimit, DateTime.UtcNow);
         var initialRound = Round.CreateInitial(initialTurn, now);
         var game = new Game(gameId, settings, GameStatus.Playing, initialRound, new[] { creator }, new List<ScoreHistory>(), now, now);
 
@@ -258,7 +258,7 @@ public sealed class GameTests
         var creatorName = new PlayerName("作成者");
         var creatorId = PlayerId.NewId();
         var creator = new Player(creatorId, creatorName, PlayerStatus.NotReady, false, false);
-        var initialTurn = Turn.CreateInitial(creator.Id, settings.TimeLimit);
+        var initialTurn = Turn.CreateInitial(creator.Id, settings.TimeLimit, DateTime.UtcNow);
         var initialRound = Round.CreateInitial(initialTurn, now);
         var game = new Game(gameId, settings, GameStatus.Finished, initialRound, new[] { creator }, new List<ScoreHistory>(), now, now);
 
@@ -275,7 +275,7 @@ public sealed class GameTests
         var creatorName = new PlayerName("作成者");
         var creatorId = PlayerId.NewId();
         var creator = new Player(creatorId, creatorName, PlayerStatus.NotReady, false, false);
-        var initialTurn = Turn.CreateInitial(creator.Id, settings.TimeLimit);
+        var initialTurn = Turn.CreateInitial(creator.Id, settings.TimeLimit, DateTime.UtcNow);
         var initialRound = Round.CreateInitial(initialTurn, now);
         var game = new Game(gameId, settings, GameStatus.Waiting, initialRound, new[] { creator }, new List<ScoreHistory>(), now, now);
 
@@ -294,7 +294,7 @@ public sealed class GameTests
         var creatorName = new PlayerName("作成者");
         var creatorId = PlayerId.NewId();
         var creator = new Player(creatorId, creatorName, PlayerStatus.NotReady, false, false);
-        var initialTurn = Turn.CreateInitial(creator.Id, settings.TimeLimit);
+        var initialTurn = Turn.CreateInitial(creator.Id, settings.TimeLimit, DateTime.UtcNow);
         var initialRound = Round.CreateInitial(initialTurn, now);
         var game = new Game(gameId, settings, GameStatus.Waiting, initialRound, new[] { creator }, new List<ScoreHistory>(), now, now);
 
@@ -313,7 +313,7 @@ public sealed class GameTests
         var creatorName = new PlayerName("作成者");
         var creatorId = PlayerId.NewId();
         var creator = new Player(creatorId, creatorName, PlayerStatus.NotReady, false, false);
-        var initialTurn = Turn.CreateInitial(creator.Id, settings.TimeLimit);
+        var initialTurn = Turn.CreateInitial(creator.Id, settings.TimeLimit, DateTime.UtcNow);
         var initialRound = Round.CreateInitial(initialTurn, now);
         var game = new Game(gameId, settings, GameStatus.Playing, initialRound, new[] { creator }, new List<ScoreHistory>(), now, now);
 
@@ -357,7 +357,7 @@ public sealed class GameTests
         var creatorName = new PlayerName("作成者");
         var creatorId = PlayerId.NewId();
         var creator = new Player(creatorId, creatorName, PlayerStatus.NotReady, false, false);
-        var initialTurn = Turn.CreateInitial(creator.Id, settings.TimeLimit);
+        var initialTurn = Turn.CreateInitial(creator.Id, settings.TimeLimit, DateTime.UtcNow);
         var initialRound = Round.CreateInitial(initialTurn, DateTime.UtcNow);
         var now = DateTime.UtcNow;
 
@@ -374,7 +374,7 @@ public sealed class GameTests
         var creatorName = new PlayerName("作成者");
         var creatorId = PlayerId.NewId();
         var creator = new Player(creatorId, creatorName, PlayerStatus.NotReady, false, false);
-        var initialTurn = Turn.CreateInitial(creator.Id, 60);
+        var initialTurn = Turn.CreateInitial(creator.Id, 60, DateTime.UtcNow);
         var initialRound = Round.CreateInitial(initialTurn, DateTime.UtcNow);
         var now = DateTime.UtcNow;
 
@@ -406,7 +406,7 @@ public sealed class GameTests
         var gameId = GameId.NewId();
         var settings = new GameSettings(60, 3, 4);
         var creatorId = PlayerId.NewId();
-        var initialTurn = Turn.CreateInitial(creatorId, settings.TimeLimit);
+        var initialTurn = Turn.CreateInitial(creatorId, settings.TimeLimit, DateTime.UtcNow);
         var initialRound = Round.CreateInitial(initialTurn, DateTime.UtcNow);
         var now = DateTime.UtcNow;
 
@@ -422,7 +422,7 @@ public sealed class GameTests
         var gameId = GameId.NewId();
         var settings = new GameSettings(60, 3, 4);
         var creatorId = PlayerId.NewId();
-        var initialTurn = Turn.CreateInitial(creatorId, settings.TimeLimit);
+        var initialTurn = Turn.CreateInitial(creatorId, settings.TimeLimit, DateTime.UtcNow);
         var initialRound = Round.CreateInitial(initialTurn, DateTime.UtcNow);
         var now = DateTime.UtcNow;
 
@@ -441,7 +441,7 @@ public sealed class GameTests
         var creatorName = new PlayerName("作成者");
         var creatorId = PlayerId.NewId();
         var creator = new Player(creatorId, creatorName, PlayerStatus.NotReady, false, false);
-        var initialTurn = Turn.CreateInitial(creator.Id, settings.TimeLimit);
+        var initialTurn = Turn.CreateInitial(creator.Id, settings.TimeLimit, DateTime.UtcNow);
         var initialRound = Round.CreateInitial(initialTurn, DateTime.UtcNow);
         var now = DateTime.UtcNow;
 
@@ -460,7 +460,7 @@ public sealed class GameTests
         var creatorName = new PlayerName("作成者");
         var creatorId = PlayerId.NewId();
         var creator = new Player(creatorId, creatorName, PlayerStatus.NotReady, false, false);
-        var initialTurn = Turn.CreateInitial(creator.Id, settings.TimeLimit);
+        var initialTurn = Turn.CreateInitial(creator.Id, settings.TimeLimit, DateTime.UtcNow);
         var initialRound = Round.CreateInitial(initialTurn, now);
         var game = new Game(gameId, settings, GameStatus.Playing, initialRound, new[] { creator }, new List<ScoreHistory>(), now, now);
 
@@ -484,7 +484,7 @@ public sealed class GameTests
         var creatorName = new PlayerName("作成者");
         var creatorId = PlayerId.NewId();
         var creator = new Player(creatorId, creatorName, PlayerStatus.NotReady, false, false);
-        var initialTurn = Turn.CreateInitial(creator.Id, settings.TimeLimit);
+        var initialTurn = Turn.CreateInitial(creator.Id, settings.TimeLimit, DateTime.UtcNow);
         var initialRound = Round.CreateInitial(initialTurn, DateTime.UtcNow);
         var now = DateTime.UtcNow;
 
@@ -506,7 +506,7 @@ public sealed class GameTests
         var creatorName = new PlayerName("作成者");
         var creatorId = PlayerId.NewId();
         var creator = new Player(creatorId, creatorName, PlayerStatus.NotReady, false, false);
-        var initialTurn = Turn.CreateInitial(creator.Id, settings.TimeLimit);
+        var initialTurn = Turn.CreateInitial(creator.Id, settings.TimeLimit, DateTime.UtcNow);
         var initialRound = Round.CreateInitial(initialTurn, DateTime.UtcNow);
         var now = DateTime.UtcNow;
 
@@ -527,7 +527,7 @@ public sealed class GameTests
         var creatorName = new PlayerName("作成者");
         var creatorId = PlayerId.NewId();
         var creator = new Player(creatorId, creatorName, PlayerStatus.NotReady, false, false);
-        var initialTurn = Turn.CreateInitial(creator.Id, settings.TimeLimit);
+        var initialTurn = Turn.CreateInitial(creator.Id, settings.TimeLimit, DateTime.UtcNow);
         var initialRound = Round.CreateInitial(initialTurn, DateTime.UtcNow);
         var now = DateTime.UtcNow;
 
@@ -546,7 +546,7 @@ public sealed class GameTests
         var creatorName = new PlayerName("作成者");
         var creatorId = PlayerId.NewId();
         var creator = new Player(creatorId, creatorName, PlayerStatus.NotReady, false, false);
-        var initialTurn = Turn.CreateInitial(creator.Id, settings.TimeLimit);
+        var initialTurn = Turn.CreateInitial(creator.Id, settings.TimeLimit, DateTime.UtcNow);
         var initialRound = Round.CreateInitial(initialTurn, DateTime.UtcNow);
         var now = DateTime.UtcNow;
 
@@ -565,7 +565,7 @@ public sealed class GameTests
         var creatorName = new PlayerName("作成者");
         var creatorId = PlayerId.NewId();
         var creator = new Player(creatorId, creatorName, PlayerStatus.NotReady, false, false);
-        var initialTurn = Turn.CreateInitial(creator.Id, settings.TimeLimit);
+        var initialTurn = Turn.CreateInitial(creator.Id, settings.TimeLimit, DateTime.UtcNow);
         var initialRound = Round.CreateInitial(initialTurn, now);
         var game = new Game(gameId, settings, GameStatus.Waiting, initialRound, new[] { creator }, new List<ScoreHistory>(), now, now);
 

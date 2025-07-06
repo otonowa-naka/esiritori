@@ -98,11 +98,12 @@ public sealed class Turn : IEquatable<Turn>
     /// </summary>
     /// <param name="drawerId">描画者のプレイヤーID</param>
     /// <param name="timeLimit">制限時間（秒）</param>
+    /// <param name="startedAt">ターン開始時刻</param>
     /// <returns>初期状態のターン</returns>
-    public static Turn CreateInitial(PlayerId drawerId, int timeLimit)
+    public static Turn CreateInitial(PlayerId drawerId, int timeLimit, DateTime startedAt)
     {
         return new Turn(1, drawerId, Option<Answer>.None(), TurnStatus.SettingAnswer, timeLimit,
-                       DateTime.MinValue, Option<DateTime>.None());
+                       startedAt, Option<DateTime>.None());
     }
 
     /// <summary>

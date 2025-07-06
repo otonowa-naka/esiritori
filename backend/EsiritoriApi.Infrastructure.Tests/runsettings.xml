@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RunSettings>
+  <RunConfiguration>
+    <EnvironmentVariables>
+      <AWS_ACCESS_KEY_ID>test</AWS_ACCESS_KEY_ID>
+      <AWS_SECRET_ACCESS_KEY>test</AWS_SECRET_ACCESS_KEY>
+      <AWS_DEFAULT_REGION>ap-northeast-1</AWS_DEFAULT_REGION>
+    </EnvironmentVariables>
+    <ResultsDirectory>./TestResults</ResultsDirectory>
+    <TestSessionTimeout>300000</TestSessionTimeout>
+  </RunConfiguration>
+  <LoggerRunSettings>
+    <Loggers>
+      <Logger friendlyName="console" enabled="True">
+        <Configuration>
+          <Verbosity>detailed</Verbosity>
+        </Configuration>
+      </Logger>
+    </Loggers>
+  </LoggerRunSettings>
+</RunSettings>

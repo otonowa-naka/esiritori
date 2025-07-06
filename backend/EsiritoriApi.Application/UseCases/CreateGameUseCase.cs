@@ -34,7 +34,7 @@ public class CreateGameUseCase : ICreateGameUseCase
         );
 
         var creator = new Player(playerId, creatorName, PlayerStatus.NotReady, false, false);
-        var initialTurn = Turn.CreateInitial(creator.Id, settings.TimeLimit);
+        var initialTurn = Turn.CreateInitial(creator.Id, settings.TimeLimit, DateTime.UtcNow);
         var initialRound = Round.CreateInitial(initialTurn, DateTime.UtcNow);
         var game = new Game(gameId, settings, GameStatus.Waiting, initialRound, new[] { creator }, new List<ScoreHistory>(), DateTime.UtcNow, DateTime.UtcNow);
 
