@@ -148,17 +148,17 @@ public sealed class Game : IEquatable<Game>
     /// <summary>
     /// 新規ゲームを作成するファクトリメソッド
     /// </summary>
-    /// <param name="id">ゲームID</param>
     /// <param name="settings">ゲーム設定</param>
     /// <param name="initialPlayer">初期プレイヤー</param>
-    /// <param name="createdAt">作成日時</param>
+    /// <param name="now">現在日時</param>
     /// <returns>新規作成されたGameインスタンス</returns>
-    public static Game CreateNew(GameId id, GameSettings settings, Player initialPlayer, DateTime createdAt)
+    public static Game NewGame(GameSettings settings, Player initialPlayer, DateTime now)
     {
+        var id = GameId.NewId();
         var players = new List<Player> { initialPlayer };
-        var initialTurn = Turn.CreateInitial(initialPlayer.Id, settings.TimeLimit, createdAt);
-        var initialRound = Round.CreateInitial(initialTurn, createdAt);
-        return new Game(id, settings, GameStatus.Waiting, initialRound, players, new List<ScoreHistory>(), createdAt, createdAt);
+        var initialTurn = Turn.CreateInitial(initialPlayer.Id, settings.TimeLimit, now);
+        var initialRound = Round.CreateInitial(initialTurn, now);
+        return new Game(id, settings, GameStatus.Waiting, initialRound, players, new List<ScoreHistory>(), now, now);
     }
 
     #region 等価性・演算子

@@ -326,18 +326,17 @@ public sealed class GameTests
     }
 
     [Fact]
-    public void CreateNewファクトリメソッド_正常に新規ゲームが作成される()
+    public void NewGameファクトリメソッド_正常に新規ゲームが作成される()
     {
-        var gameId = GameId.NewId();
         var settings = new GameSettings(60, 3, 4);
         var playerName = new PlayerName("初期プレイヤー");
         var playerId = PlayerId.NewId();
         var initialPlayer = new Player(playerId, playerName, PlayerStatus.NotReady, false, false);
         var createdAt = DateTime.UtcNow;
 
-        var game = Game.CreateNew(gameId, settings, initialPlayer, createdAt);
+        var game = Game.NewGame(settings, initialPlayer, createdAt);
 
-        Assert.Equal(gameId, game.Id);
+        Assert.NotNull(game.Id);
         Assert.Equal(settings, game.Settings);
         Assert.Equal(GameStatus.Waiting, game.Status);
         Assert.Single(game.Players);

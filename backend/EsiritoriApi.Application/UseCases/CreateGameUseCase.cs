@@ -24,8 +24,6 @@ public class CreateGameUseCase : ICreateGameUseCase
     {
         ArgumentNullException.ThrowIfNull(request);
 
-        var gameId = GameId.NewId();
-        var playerId = PlayerId.NewId();
         var creatorName = new PlayerName(request.CreatorName);
         var settings = new GameSettings(
             request.Settings.TimeLimit,
@@ -33,10 +31,8 @@ public class CreateGameUseCase : ICreateGameUseCase
             request.Settings.PlayerCount
         );
 
-        var creator = new Player(playerId, creatorName, PlayerStatus.NotReady, false, false);
-        var initialTurn = Turn.CreateInitial(creator.Id, settings.TimeLimit, DateTime.UtcNow);
-        var initialRound = Round.CreateInitial(initialTurn, DateTime.UtcNow);
-        var game = new Game(gameId, settings, GameStatus.Waiting, initialRound, new[] { creator }, new List<ScoreHistory>(), DateTime.UtcNow, DateTime.UtcNow);
+        var creator = Player.CreateInitial(creatorName);
+        var game = Game.NewGame(settings, creator, DateTime.UtcNow);
 
         await _gameRepository.SaveAsync(game, cancellationToken);
 

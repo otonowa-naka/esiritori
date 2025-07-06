@@ -763,3 +763,72 @@ Assert.Equal("ゲームは既に開始されています", exception.ErrorMessag
 - [ ] エラーコードの命名が統一されているか
 - [ ] エラーメッセージが適切か
 
+---
+
+### ドメインオブジェクト生成のルール
+
+#### 1. UseCaseでのドメインオブジェクト生成はファクトリメソッドを使用する
+- **❌ 禁止**: UseCaseでドメインオブジェクトのコンストラクタを直接呼び出し
+- **✅ 推奨**: 生成ルールが埋め込まれたファクトリメソッドを使用
+
+**❌ 禁止例**
+```csharp
+// CreateGameUseCase.cs
+var playerId = PlayerId.NewId();
+var creator = new Player(playerId, creatorName, PlayerStatus.NotReady, false, false);
+var gameId = GameId.NewId();
+var game = new Game(gameId, settings, GameStatus.Waiting, initialRound, new[] { creator }, new List<ScoreHistory>(), DateTime.UtcNow, DateTime.UtcNow);
+```
+
+**✅ 推奨例**
+```csharp
+// CreateGameUseCase.cs
+var creator = Player.CreateInitial(creatorName);
+var game = Game.NewGame(settings, creator, DateTime.UtcNow);
+```
+
+#### 2. ファクトリメソッドの命名規則
+- **NewXXX**: 完全に新しいオブジェクトの生成（例：`Game.NewGame`, `GameId.NewId`）
+- **CreateInitial**: 初期状態のオブジェクトの生成（例：`Player.CreateInitial`, `Turn.CreateInitial`）
+- **CreateXXX**: 特定の状態・目的のオブジェクトの生成（例：`Round.CreateInitial`）
+
+#### 3. ファクトリメソッドの責務
+- **ID生成**: 必要なIDを内部で生成
+- **初期値設定**: 適切な初期状態を設定
+- **依存オブジェクト生成**: 関連する子オブジェクトを生成
+- **バリデーション**: 生成時の制約チェック
+
+#### 4. 実装例
+```csharp
+// Game.cs
+public static Game NewGame(GameSettings settings, Player initialPlayer, DateTime now)
+{
+    var id = GameId.NewId();  // ID生成を内部化
+    var players = new List<Player> { initialPlayer };
+    var initialTurn = Turn.CreateInitial(initialPlayer.Id, settings.TimeLimit, now);
+    var initialRound = Round.CreateInitial(initialTurn, now);
+    return new Game(id, settings, GameStatus.Waiting, initialRound, players, new List<ScoreHistory>(), now, now);
+}
+
+// Player.cs
+public static Player CreateInitial(PlayerName name)
+{
+    var id = PlayerId.NewId();  // ID生成を内部化
+    return new Player(id, name, PlayerStatus.NotReady, false, false);  // 初期状態を設定
+}
+```
+
+#### 5. 理由
+- **生成ルールの集約**: ドメインオブジェクト生成の複雑さをドメイン層に隠蔽
+- **意図の明確化**: ファクトリメソッド名で生成目的が明確
+- **保守性**: 生成ルールの変更がドメイン層で完結
+- **テスト容易性**: UseCaseのテストがシンプルになる
+- **DDD準拠**: ドメインの知識がドメイン層に集約される
+
+#### 6. 実装チェックリスト
+- [ ] UseCaseでドメインオブジェクトのコンストラクタを直接呼び出していない
+- [ ] 適切な命名のファクトリメソッドを使用している
+- [ ] ファクトリメソッドでID生成・初期値設定を行っている
+- [ ] 生成ルールがドメイン層に集約されている
+- [ ] テストでもファクトリメソッドを使用している
+
