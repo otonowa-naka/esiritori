@@ -91,6 +91,7 @@ services:
       "
 
   # DynamoDB 管理UI - LocalStackのDynamoDBを表示・管理
+  # http://127.0.0.1:8001/
   dynamodb-admin:
     container_name: esiritori-dynamodb-admin
     image: aaronshaf/dynamodb-admin:latest
