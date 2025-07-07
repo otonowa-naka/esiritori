@@ -33,7 +33,8 @@ jobs:
           -e PERSISTENCE=0 \
           -e EAGER_SERVICE_LOADING=1 \
           -e SKIP_INFRA_DOWNLOADS=1 \
-          --tmpfs /tmp/localstack \
+          -e DATA_DIR=/tmp/localstack/data \
+          -v /tmp/localstack:/tmp/localstack \
           localstack/localstack:3.0
     
     - name: Wait for LocalStack to be ready
