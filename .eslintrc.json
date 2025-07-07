@@ -1,6 +1,8 @@
 {
-  "extends": ["next/core-web-vitals"],
+  "extends": ["@typescript-eslint/eslint-recommended"],
   "rules": {
     "prefer-const": "error"
-  }
+  },
+  "root": true,
+  "ignorePatterns": ["frontend/**/*"]
 }
