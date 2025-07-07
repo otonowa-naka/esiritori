@@ -28,7 +28,7 @@ export const Default: Story = {
   args: {
     width: 600,
     height: 400,
-    onDrawingUpdate: (drawingData) => {
+    onDrawingUpdate: (drawingData: string) => {
       console.log('Drawing updated:', drawingData.length, 'bytes');
     },
   },
@@ -38,7 +38,7 @@ export const Small: Story = {
   args: {
     width: 300,
     height: 200,
-    onDrawingUpdate: (drawingData) => {
+    onDrawingUpdate: (drawingData: string) => {
       console.log('Drawing updated:', drawingData.length, 'bytes');
     },
   },
@@ -48,7 +48,7 @@ export const Large: Story = {
   args: {
     width: 800,
     height: 600,
-    onDrawingUpdate: (drawingData) => {
+    onDrawingUpdate: (drawingData: string) => {
       console.log('Drawing updated:', drawingData.length, 'bytes');
     },
   },
@@ -59,7 +59,7 @@ export const ReadOnly: Story = {
     width: 600,
     height: 400,
     readOnly: true,
-    onDrawingUpdate: (drawingData) => {
+    onDrawingUpdate: (drawingData: string) => {
       console.log('Drawing updated:', drawingData.length, 'bytes');
     },
   },

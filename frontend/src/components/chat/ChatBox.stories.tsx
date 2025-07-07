@@ -64,7 +64,7 @@ const sampleMessages: ChatMessage[] = [
 export const Default: Story = {
   args: {
     messages: sampleMessages,
-    onSendMessage: (content) => {
+    onSendMessage: (content: string) => {
       console.log('Message sent:', content);
     },
   },
@@ -73,7 +73,7 @@ export const Default: Story = {
 export const EmptyChat: Story = {
   args: {
     messages: [],
-    onSendMessage: (content) => {
+    onSendMessage: (content: string) => {
       console.log('Message sent:', content);
     },
   },
@@ -83,7 +83,7 @@ export const DisabledChat: Story = {
   args: {
     messages: sampleMessages,
     disabled: true,
-    onSendMessage: (content) => {
+    onSendMessage: (content: string) => {
       console.log('Message sent:', content);
     },
   },
@@ -93,7 +93,7 @@ export const WithCustomPlaceholder: Story = {
   args: {
     messages: sampleMessages,
     placeholder: 'ここに答えを入力してください...',
-    onSendMessage: (content) => {
+    onSendMessage: (content: string) => {
       console.log('Message sent:', content);
     },
   },
@@ -121,7 +121,7 @@ export const SystemMessagesOnly: Story = {
         timestamp: '2023-12-01T10:01:00Z',
       },
     ],
-    onSendMessage: (content) => {
+    onSendMessage: (content: string) => {
       console.log('Message sent:', content);
     },
   },

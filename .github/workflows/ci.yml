@@ -10,22 +10,6 @@ jobs:
   backend-tests:
     runs-on: ubuntu-latest
     
-    services:
-      localstack:
-        image: localstack/localstack:latest
-        ports:
-          - 4566:4566
-        env:
-          SERVICES: dynamodb
-          DEBUG: 1
-          DATA_DIR: /tmp/localstack/data
-          DOCKER_HOST: unix:///var/run/docker.sock
-        options: >-
-          --health-cmd "curl -f http://localhost:4566/health"
-          --health-interval 30s
-          --health-timeout 10s
-          --health-retries 3
-    
     steps:
     - uses: actions/checkout@v4
     
@@ -39,6 +23,33 @@ jobs:
     
     - name: Build
       run: dotnet build backend/EsiritoriApi.sln --no-restore
+    
+    - name: Start LocalStack
+      run: |
+        docker run -d --name localstack \
+          -p 4566:4566 \
+          -e SERVICES=dynamodb \
+          -e DEBUG=1 \
+          -e DOCKER_HOST=unix:///var/run/docker.sock \
+          localstack/localstack:latest
+    
+    - name: Wait for LocalStack to be ready
+      run: |
+        echo "Waiting for LocalStack to start..."
+        timeout=60
+        while [ $timeout -gt 0 ]; do
+          if curl -f http://localhost:4566/health >/dev/null 2>&1; then
+            echo "LocalStack is ready"
+            break
+          fi
+          echo "Waiting for LocalStack... ($timeout seconds left)"
+          sleep 2
+          timeout=$((timeout - 2))
+        done
+        if [ $timeout -eq 0 ]; then
+          echo "LocalStack failed to start"
+          exit 1
+        fi
     
     - name: Setup AWS CLI
       uses: aws-actions/configure-aws-credentials@v4
