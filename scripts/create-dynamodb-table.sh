@@ -27,8 +27,8 @@ aws dynamodb create-table \
     AttributeName=PK,KeyType=HASH \
     AttributeName=SK,KeyType=RANGE \
   --global-secondary-indexes \
-    IndexName=GSI1-ActiveGameIndex,KeySchema=['{AttributeName=GSI1PK,KeyType=HASH},{AttributeName=GSI1SK,KeyType=RANGE}'],Projection='{ProjectionType=KEYS_ONLY}',BillingMode=PAY_PER_REQUEST \
-    IndexName=GSI2-PlayerIndex,KeySchema=['{AttributeName=GSI2PK,KeyType=HASH},{AttributeName=GSI2SK,KeyType=RANGE}'],Projection='{ProjectionType=ALL}',BillingMode=PAY_PER_REQUEST \
+    IndexName=GSI1-ActiveGameIndex,KeySchema=['{AttributeName=GSI1PK,KeyType=HASH},{AttributeName=GSI1SK,KeyType=RANGE}'],Projection='{ProjectionType=KEYS_ONLY}' \
+    IndexName=GSI2-PlayerIndex,KeySchema=['{AttributeName=GSI2PK,KeyType=HASH},{AttributeName=GSI2SK,KeyType=RANGE}'],Projection='{ProjectionType=ALL}' \
   --billing-mode PAY_PER_REQUEST \
   --stream-specification StreamEnabled=true,StreamViewType=NEW_AND_OLD_IMAGES
 
