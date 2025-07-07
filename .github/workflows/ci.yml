@@ -29,25 +29,30 @@ jobs:
         docker run -d --name localstack \
           -p 4566:4566 \
           -e SERVICES=dynamodb \
-          -e DEBUG=1 \
-          -e DOCKER_HOST=unix:///var/run/docker.sock \
-          localstack/localstack:latest
+          -e DEBUG=0 \
+          -e PERSISTENCE=0 \
+          -e EAGER_SERVICE_LOADING=1 \
+          -e SKIP_INFRA_DOWNLOADS=1 \
+          --tmpfs /tmp/localstack \
+          localstack/localstack:3.0
     
     - name: Wait for LocalStack to be ready
       run: |
         echo "Waiting for LocalStack to start..."
-        timeout=60
-        while [ $timeout -gt 0 ]; do
-          if curl -f http://localhost:4566/health >/dev/null 2>&1; then
+        for i in {1..30}; do
+          if curl -f http://localhost:4566/_localstack/health >/dev/null 2>&1; then
             echo "LocalStack is ready"
+            curl -s http://localhost:4566/_localstack/health | jq .
             break
           fi
-          echo "Waiting for LocalStack... ($timeout seconds left)"
+          echo "Waiting for LocalStack... (attempt $i/30)"
           sleep 2
-          timeout=$((timeout - 2))
         done
-        if [ $timeout -eq 0 ]; then
-          echo "LocalStack failed to start"
+        
+        # Check if LocalStack is actually ready
+        if ! curl -f http://localhost:4566/_localstack/health >/dev/null 2>&1; then
+          echo "LocalStack failed to start properly"
+          docker logs localstack
           exit 1
         fi
     
