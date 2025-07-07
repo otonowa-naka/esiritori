@@ -1,0 +1,125 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  backend-tests:
+    runs-on: ubuntu-latest
+    
+    services:
+      localstack:
+        image: localstack/localstack:latest
+        ports:
+          - 4566:4566
+        env:
+          SERVICES: dynamodb
+          DEBUG: 1
+          DATA_DIR: /tmp/localstack/data
+          DOCKER_HOST: unix:///var/run/docker.sock
+        options: >-
+          --health-cmd "curl -f http://localhost:4566/health"
+          --health-interval 30s
+          --health-timeout 10s
+          --health-retries 3
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '8.0.x'
+    
+    - name: Restore dependencies
+      run: dotnet restore backend/EsiritoriApi.sln
+    
+    - name: Build
+      run: dotnet build backend/EsiritoriApi.sln --no-restore
+    
+    - name: Setup AWS CLI
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: test
+        aws-secret-access-key: test
+        aws-region: ap-northeast-1
+    
+    - name: Create DynamoDB table
+      run: |
+        chmod +x scripts/create-dynamodb-table.sh
+        ./scripts/create-dynamodb-table.sh
+      env:
+        AWS_ENDPOINT_URL: http://localhost:4566
+    
+    - name: Run Unit Tests
+      run: |
+        dotnet test backend/EsiritoriApi.Domain.Tests/ --no-build --verbosity normal --collect:"XPlat Code Coverage"
+        dotnet test backend/EsiritoriApi.Application.Tests/ --no-build --verbosity normal --collect:"XPlat Code Coverage"
+        dotnet test backend/EsiritoriApi.Infrastructure.Tests/ --no-build --verbosity normal --collect:"XPlat Code Coverage"
+        dotnet test backend/EsiritoriApi.Api.Tests/ --no-build --verbosity normal --collect:"XPlat Code Coverage"
+      env:
+        AWS_ENDPOINT_URL: http://localhost:4566
+        AWS_ACCESS_KEY_ID: test
+        AWS_SECRET_ACCESS_KEY: test
+        AWS_DEFAULT_REGION: ap-northeast-1
+    
+    - name: Run Integration Tests
+      run: dotnet test backend/EsiritoriApi.Integration.Tests/ --no-build --verbosity normal --collect:"XPlat Code Coverage"
+      env:
+        AWS_ENDPOINT_URL: http://localhost:4566
+        AWS_ACCESS_KEY_ID: test
+        AWS_SECRET_ACCESS_KEY: test
+        AWS_DEFAULT_REGION: ap-northeast-1
+    
+    - name: Upload coverage reports to Codecov
+      uses: codecov/codecov-action@v4
+      with:
+        directory: ./backend/
+        flags: backend
+        name: backend-coverage
+        fail_ci_if_error: false
+
+  frontend-tests:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+    
+    - name: Setup pnpm
+      uses: pnpm/action-setup@v4
+      with:
+        version: 8
+    
+    - name: Get pnpm store directory
+      id: pnpm-cache
+      shell: bash
+      run: |
+        echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
+    
+    - name: Setup pnpm cache
+      uses: actions/cache@v4
+      with:
+        path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+        key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+        restore-keys: |
+          ${{ runner.os }}-pnpm-store-
+    
+    - name: Install dependencies
+      run: cd frontend && pnpm install
+    
+    - name: Type check
+      run: cd frontend && pnpm type-check
+    
+    - name: Lint
+      run: cd frontend && pnpm lint
+    
+    - name: Build
+      run: cd frontend && pnpm build
