@@ -3,6 +3,7 @@
 import React, { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Button, Input, Card, CardHeader, CardTitle, CardContent } from '@/components/ui'
+import { apiClient } from '@/lib/api'
 
 function CreateRoomContent() {
   const router = useRouter()
@@ -14,6 +15,7 @@ function CreateRoomContent() {
     playerCount: 4
   })
   const [isCreating, setIsCreating] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const [createdRoom, setCreatedRoom] = useState<{
     id: string
     url: string
@@ -28,10 +30,17 @@ function CreateRoomContent() {
 
   const handleCreateRoom = async () => {
     setIsCreating(true)
+    setError(null)
     
     try {
+      // C# APIを呼び出してゲームを作成
+      const response = await apiClient.createGame(playerName, {
+        timeLimit: settings.timeLimit,
+        roundCount: settings.roundCount,
+        playerCount: settings.playerCount
+      })
       
-      const roomId = Math.random().toString(36).substring(2, 8).toUpperCase()
+      const roomId = response.game.id
       const roomUrl = `${window.location.origin}/game/${roomId}`
       
       setCreatedRoom({
@@ -40,6 +49,7 @@ function CreateRoomContent() {
       })
     } catch (error) {
       console.error('ルーム作成エラー:', error)
+      setError(error instanceof Error ? error.message : 'ルームの作成に失敗しました')
     } finally {
       setIsCreating(false)
     }
@@ -233,6 +243,11 @@ function CreateRoomContent() {
         </Card>
 
         <div className="space-y-3">
+          {error && (
+            <div className="p-3 bg-red-50 border border-red-200 rounded-md">
+              <p className="text-red-600 text-small">{error}</p>
+            </div>
+          )}
           <Button
             onClick={handleCreateRoom}
             variant="primary"

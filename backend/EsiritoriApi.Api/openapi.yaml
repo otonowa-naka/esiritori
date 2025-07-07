@@ -1,0 +1,355 @@
+openapi: 3.0.0
+info:
+  title: お絵描き当てゲーム API
+  version: 1.0.0
+  description: お絵描き当てゲームのAPI仕様
+
+servers:
+  - url: /api/v1
+    description: API v1
+
+components:
+  schemas:
+    Game:
+      type: object
+      properties:
+        id:
+          type: string
+        settings:
+          type: object
+          properties:
+            timeLimit:
+              type: integer
+              description: 制限時間（秒）
+            roundCount:
+              type: integer
+              description: ラウンド数
+            playerCount:
+              type: integer
+              description: 最大プレイヤー数
+        status:
+          type: string
+          enum: [waiting, playing, finished]
+        currentRound:
+          type: object
+          properties:
+            roundNumber:
+              type: integer
+            currentTurn:
+              type: object
+              properties:
+                turnNumber:
+                  type: integer
+                status:
+                  type: string
+                  enum: [not_started, setting_answer, drawing, finished]
+                drawerId:
+                  type: string
+                answer:
+                  type: string
+        players:
+          type: array
+          items:
+            $ref: '#/components/schemas/Player'
+        scoreRecords:
+          type: array
+          items:
+            $ref: '#/components/schemas/ScoreRecord'
+
+    Player:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        isReady:
+          type: boolean
+        isDrawer:
+          type: boolean
+
+    ScoreRecord:
+      type: object
+      properties:
+        playerId:
+          type: string
+        roundNumber:
+          type: integer
+        turnNumber:
+          type: integer
+        points:
+          type: integer
+        reason:
+          type: string
+          enum: [correct_answer, drawer_penalty]
+        timestamp:
+          type: string
+          format: date-time
+
+    ChatMessage:
+      type: object
+      properties:
+        id:
+          type: string
+        gameId:
+          type: string
+        playerId:
+          type: string
+        playerName:
+          type: string
+        content:
+          type: string
+        type:
+          type: string
+          enum: [normal, system, correct]
+        timestamp:
+          type: string
+          format: date-time
+
+paths:
+  /games:
+    post:
+      summary: ゲームを作成
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                playerName:
+                  type: string
+                settings:
+                  $ref: '#/components/schemas/Game/properties/settings'
+      responses:
+        '201':
+          description: ゲーム作成成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Game'
+
+  /games/{gameId}/join:
+    post:
+      summary: ゲームに参加
+      parameters:
+        - name: gameId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                playerName:
+                  type: string
+      responses:
+        '200':
+          description: 参加成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Player'
+
+  /games/{gameId}/ready:
+    post:
+      summary: 準備完了
+      parameters:
+        - name: gameId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 準備完了
+
+  /games/{gameId}/answer:
+    post:
+      summary: お題を設定
+      parameters:
+        - name: gameId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                answer:
+                  type: string
+      responses:
+        '200':
+          description: お題設定成功
+
+  /games/{gameId}/drawing:
+    post:
+      summary: 描画データを更新
+      parameters:
+        - name: gameId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                drawingData:
+                  type: string
+                  description: base64形式の描画データ
+      responses:
+        '200':
+          description: 描画更新成功
+
+  /games/{gameId}/submit:
+    post:
+      summary: 回答を提出
+      parameters:
+        - name: gameId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                answer:
+                  type: string
+      responses:
+        '200':
+          description: 回答提出成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  isCorrect:
+                    type: boolean
+
+  /games/{gameId}/chat:
+    post:
+      summary: チャットメッセージを送信
+      parameters:
+        - name: gameId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                content:
+                  type: string
+      responses:
+        '200':
+          description: メッセージ送信成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChatMessage'
+
+  /games/{gameId}:
+    get:
+      summary: ゲーム情報を取得
+      parameters:
+        - name: gameId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ゲーム情報取得成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Game'
+
+  /games/{gameId}/chat:
+    get:
+      summary: チャット履歴を取得
+      parameters:
+        - name: gameId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: チャット履歴取得成功
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ChatMessage'
+
+  /games/{gameId}/start:
+    post:
+      summary: ゲームを開始
+      parameters:
+        - name: gameId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ゲーム開始成功
+
+# --- WebSocket通知設計 ---
+
+x-websocket:
+  description: |
+    WebSocketでは、モデルの更新通知のみを行います。
+    クライアントは通知を受け取ったら、REST APIで該当モデルの最新データを取得してください。
+  message:
+    type: object
+    properties:
+      type:
+        type: string
+        example: model_updated
+        description: 通知種別（固定値）
+      modelType:
+        type: string
+        example: Game
+        description: 更新されたモデルの種類（例: Game, ChatMessage, Player）
+      modelId:
+        type: string
+        example: game-xyz
+        description: 更新されたモデルのID
+      event:
+        type: string
+        example: GameStarted
+        description: どのイベントで更新されたか（任意）
+      updatedAt:
+        type: string
+        format: date-time
+        example: 2024-05-01T12:34:56Z
+        description: サーバ時刻（任意）
+  example:
+    type: model_updated
+    modelType: Game
+    modelId: game-xyz
+    event: GameStarted
+    updatedAt: 2024-05-01T12:34:56Z 

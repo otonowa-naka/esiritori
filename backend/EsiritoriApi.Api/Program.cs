@@ -35,7 +35,15 @@ builder.Services.AddScoped<IStartGameUseCase, StartGameUseCase>();
 builder.Services.AddScoped<IGameRepository, DynamoDBGameRepository>();
 
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo
+    {
+        Title = "お絵描き当てゲーム API",
+        Version = "v1",
+        Description = "お絵描き当てゲームのAPI仕様"
+    });
+});
 
 builder.Services.AddCors(options =>
 {
@@ -55,9 +63,13 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
-
 app.UseCors();
+
+// Development環境ではHTTPSリダイレクトを無効化
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+}
 
 app.UseAuthorization();
 

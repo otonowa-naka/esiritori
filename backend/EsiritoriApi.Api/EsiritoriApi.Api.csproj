@@ -15,4 +15,10 @@
     <ProjectReference Include="..\EsiritoriApi.Infrastructure\EsiritoriApi.Infrastructure.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Content Include="openapi.yaml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
 </Project>

@@ -19,10 +19,17 @@ export class ApiClient {
     return response.json();
   }
 
-  async createGame(playerName: string, settings: Game['settings']): Promise<Game> {
-    return this.request<Game>('/games', {
+  async createGame(creatorName: string, settings: { timeLimit: number; roundCount: number; playerCount: number }): Promise<{ game: Game; player: Player }> {
+    return this.request<{ game: Game; player: Player }>('/games', {
       method: 'POST',
-      body: JSON.stringify({ playerName, settings }),
+      body: JSON.stringify({ 
+        creatorName, 
+        settings: {
+          timeLimit: settings.timeLimit,
+          roundCount: settings.roundCount,
+          playerCount: settings.playerCount
+        }
+      }),
     });
   }
 
