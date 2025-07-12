@@ -19,7 +19,7 @@ public sealed class DynamoDBGameRepositoryTests : IAsyncLifetime
     private IAmazonDynamoDB _dynamoDBClient = null!;
     private DynamoDBGameRepository _repository = null!;
     private const string TableName = "EsiritoriGame";
-    private const string LocalStackEndpoint = "http://localhost:4566";
+    private const string LocalStackEndpoint = "http://localhost:8000";
     private readonly List<GameId> _createdGameIds = new();
 
     public DynamoDBGameRepositoryTests()
@@ -29,46 +29,53 @@ public sealed class DynamoDBGameRepositoryTests : IAsyncLifetime
 
     public async Task InitializeAsync()
     {
-        // LocalStack用の環境変数を明示的に設定
-        Environment.SetEnvironmentVariable("AWS_ACCESS_KEY_ID", "test");
-        Environment.SetEnvironmentVariable("AWS_SECRET_ACCESS_KEY", "test");
-        Environment.SetEnvironmentVariable("AWS_DEFAULT_REGION", "ap-northeast-1");
-        Environment.SetEnvironmentVariable("AWS_ENDPOINT_URL", LocalStackEndpoint);
-        
-        // LocalStackが既に起動していることを前提とする
-        // 環境変数を使用したクライアント作成
-        Console.WriteLine($"Using environment variables approach:");
-        Console.WriteLine($"AWS_ENDPOINT_URL: {Environment.GetEnvironmentVariable("AWS_ENDPOINT_URL")}");
-        Console.WriteLine($"AWS_ACCESS_KEY_ID: {Environment.GetEnvironmentVariable("AWS_ACCESS_KEY_ID")}");
-        Console.WriteLine($"AWS_DEFAULT_REGION: {Environment.GetEnvironmentVariable("AWS_DEFAULT_REGION")}");
-        
-        var config = new AmazonDynamoDBConfig
+        try
         {
-            ServiceURL = LocalStackEndpoint,
-            UseHttp = true,
-            MaxErrorRetry = 3,
-            Timeout = TimeSpan.FromSeconds(30),
-            RegionEndpoint = RegionEndpoint.APNortheast1  // 明示的にap-northeast-1を設定
-        };
-        
-        var credentials = new Amazon.Runtime.BasicAWSCredentials("test", "test");
-        _dynamoDBClient = new AmazonDynamoDBClient(credentials, config);
-
-        // テーブルは既にDocker Composeで作成されているため、作成処理は不要
-        // LocalStackとの接続をテスト（リトライ付き）
-        await WaitForLocalStackAndTable();
-        
-        // データのクリーンアップを削除：NewId()を使用するためクリーンアップ不要
-
-        var configuration = new ConfigurationBuilder()
-            .AddInMemoryCollection(new[]
+            // LocalStack用の環境変数を明示的に設定
+            Environment.SetEnvironmentVariable("AWS_ACCESS_KEY_ID", "test");
+            Environment.SetEnvironmentVariable("AWS_SECRET_ACCESS_KEY", "test");
+            Environment.SetEnvironmentVariable("AWS_DEFAULT_REGION", "ap-northeast-1");
+            Environment.SetEnvironmentVariable("AWS_ENDPOINT_URL", LocalStackEndpoint);
+            
+            // LocalStackが既に起動していることを前提とする
+            // 環境変数を使用したクライアント作成
+            Console.WriteLine($"Using environment variables approach:");
+            Console.WriteLine($"AWS_ENDPOINT_URL: {Environment.GetEnvironmentVariable("AWS_ENDPOINT_URL")}");
+            Console.WriteLine($"AWS_ACCESS_KEY_ID: {Environment.GetEnvironmentVariable("AWS_ACCESS_KEY_ID")}");
+            Console.WriteLine($"AWS_DEFAULT_REGION: {Environment.GetEnvironmentVariable("AWS_DEFAULT_REGION")}");
+            
+            var config = new AmazonDynamoDBConfig
             {
-                new KeyValuePair<string, string?>("DynamoDB:TableName", TableName)
-            })
-            .Build();
+                ServiceURL = LocalStackEndpoint,
+                UseHttp = true,
+                MaxErrorRetry = 3,
+                Timeout = TimeSpan.FromSeconds(30),
+                RegionEndpoint = RegionEndpoint.APNortheast1  // 明示的にap-northeast-1を設定
+            };
+            
+            var credentials = new Amazon.Runtime.BasicAWSCredentials("test", "test");
+            _dynamoDBClient = new AmazonDynamoDBClient(credentials, config);
 
-        var logger = new Mock<ILogger<DynamoDBGameRepository>>().Object;
-        _repository = new DynamoDBGameRepository(_dynamoDBClient, configuration, logger);
+            // テーブルは既にDocker Composeで作成されているため、作成処理は不要
+            // LocalStackとの接続をテスト（リトライ付き）
+            await WaitForLocalStackAndTable();
+            
+            // データのクリーンアップを削除：NewId()を使用するためクリーンアップ不要
+
+            var configuration = new ConfigurationBuilder()
+                .AddInMemoryCollection(new[]
+                {
+                    new KeyValuePair<string, string?>("DynamoDB:TableName", TableName)
+                })
+                .Build();
+
+            var logger = new Mock<ILogger<DynamoDBGameRepository>>().Object;
+            _repository = new DynamoDBGameRepository(_dynamoDBClient, configuration, logger);
+        }
+        catch (Exception)
+        {
+            Assert.True(false, "DynamoDB Local is not running. Please start Docker Compose: docker compose up -d");
+        }
     }
 
     public async Task DisposeAsync()
@@ -93,18 +100,6 @@ public sealed class DynamoDBGameRepositoryTests : IAsyncLifetime
 
     private async Task WaitForLocalStackAndTable()
     {
-        // LocalStackが起動していない場合はテストをスキップ
-        try
-        {
-            using var httpClient = new HttpClient();
-            httpClient.Timeout = TimeSpan.FromSeconds(5);
-            await httpClient.GetStringAsync($"{LocalStackEndpoint}/_localstack/health");
-        }
-        catch (Exception)
-        {
-            Assert.True(false, "LocalStack is not running. Please start Docker Compose: docker compose up -d");
-        }
-
         // テーブルが存在するかチェック（詳細デバッグ付き）
         try
         {

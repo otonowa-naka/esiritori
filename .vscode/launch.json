@@ -1,0 +1,48 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Frontend: Next.js",
+      "type": "node",
+      "request": "launch",
+      "program": "${workspaceFolder}/frontend/node_modules/.pnpm/next@15.3.4_@babel+core@7.28.0_react-dom@19.1.0_react@19.1.0__react@19.1.0/node_modules/next/dist/bin/next",
+      "args": ["dev", "--hostname", "0.0.0.0"],
+      "cwd": "${workspaceFolder}/frontend",
+      "env": {
+        "NODE_ENV": "development",
+        "NEXT_PUBLIC_API_BASE_URL": "http://localhost:5074/api",
+        "NODE_OPTIONS": ""
+      },
+      "skipFiles": ["<node_internals>/**"],
+      "console": "integratedTerminal"
+    },
+    {
+      "name": "Backend: ASP.NET Core",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build-backend",
+      "program": "${workspaceFolder}/backend/EsiritoriApi.Api/bin/Debug/net8.0/EsiritoriApi.Api.dll",
+      "args": ["--urls", "http://0.0.0.0:5074"],
+      "cwd": "${workspaceFolder}/backend/EsiritoriApi.Api",
+      "stopAtEntry": false,
+      "env": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "DynamoDB:ServiceURL": "http://localhost:8000",
+        "AWS:Region": "ap-northeast-1",
+        "AWS_ACCESS_KEY_ID": "test",
+        "AWS_SECRET_ACCESS_KEY": "test"
+      },
+      "console": "integratedTerminal"
+    }
+  ],
+  "compounds": [
+    {
+      "name": "Full Stack Debug",
+      "configurations": [
+        "Backend: ASP.NET Core",
+        "Frontend: Next.js"
+      ],
+      "stopAll": true
+    }
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "dotnet-test-explorer.testProjectPath": "backend/**/*.Tests.csproj",
+  "dotnet.server.useOmnisharp": true,
+  "dotnet.preferCSharpExtension": true,
+  "dotnet.unitTests.runSettingsPath": "${workspaceFolder}/test.runsettings",
+  "dotnet.completion.showCompletionItemsFromUnimportedNamespaces": true,
+  "dotnet.experimental.completionBudget": 5000,
+  "omnisharp.testRunSettings": {
+    "environmentVariables": {
+      "AWS_ACCESS_KEY_ID": "test",
+      "AWS_SECRET_ACCESS_KEY": "test",
+      "AWS_DEFAULT_REGION": "ap-northeast-1"
+    }
+  },
+  "dotnet.unitTests.enabled": true,
+  "csharp.debug.console": "integratedTerminal",
+  "dotnet.codeLens.enableTestsCodeLens": true
+}

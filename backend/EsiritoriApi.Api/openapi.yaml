@@ -3,6 +3,10 @@ info:
   title: お絵描き当てゲーム API
   version: 1.0.0
   description: お絵描き当てゲームのAPI仕様
+  contact: 
+    name: API Support
+    url: https://www.example.com/support
+    email: support@example.comh
 
 servers:
   - url: /api/v1
