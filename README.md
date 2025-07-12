@@ -1,440 +1,340 @@
-# Esiritori（お絵描き当てゲーム）
+# Esiritori - お絵描き当てゲーム
 
-リアルタイム多人数参加型のお絵描き当てゲームです。一人が与えられたお題を描き、他の参加者がそれを当てるゲームです。
+リアルタイム多人数対戦のお絵描き当てゲームです。プレイヤーが順番に絵を描き、他のプレイヤーがその絵が何かを当てるゲームです。
 
-## 📋 プロジェクト構成
+## 🏗️ アーキテクチャ
 
-このプロジェクトは以下の4つのコンポーネントで構成されています：
+### システム構成
 
 - **フロントエンド**: Next.js 15 + React 19 + TypeScript + Tailwind CSS
-- **APIモック**: Node.js + Express（開発用）
-- **C# API**: .NET 8.0 + Clean Architecture + DynamoDB（本格実装）
-- **インフラ**: Docker Compose + DynamoDB Local（AWS DynamoDBローカル環境）
+- **バックエンド**: .NET 8.0 + Clean Architecture + DynamoDB
+- **インフラ**: LocalStack (AWS services mock) + Docker Compose
+- **Lambda**: AWS Lambda Function (LocalStack環境)
 
-## 🛠️ 環境構築
+### 技術スタック
 
-### 前提条件
+| 領域 | 技術 |
+|------|------|
+| フロントエンド | Next.js 15, React 19, TypeScript, Tailwind CSS |
+| バックエンド | .NET 8.0, ASP.NET Core, Clean Architecture |
+| データベース | DynamoDB (LocalStack) |
+| Lambda | AWS Lambda Function, Function URL |
+| 開発環境 | Docker Compose, LocalStack |
+| テスト | xUnit, Moq, カバレッジ測定 |
 
-以下のソフトウェアがインストールされている必要があります：
+## 🚀 クイックスタート
 
-- **Docker & Docker Compose**: コンテナ環境用
-- **Node.js 20+**: ローカル開発用
-- **pnpm**: フロントエンド依存関係管理用
-- **.NET 8.0 SDK**: C# API開発・テスト用（オプション）
+### 必要な環境
 
-### Makefileを使用した構築（推奨）
+- Docker & Docker Compose
+- .NET 8.0 SDK
+- Node.js (18+) & pnpm
+- AWS CLI
 
-1. リポジトリをクローン:
+### Lambda環境での開発（推奨）
+
 ```bash
-git clone <repository-url>
-cd esiritori
+# Lambda環境のクイックスタート
+make lambda-quick-start
+
+# 個別コマンド
+make setup-lambda          # Lambda Test Tool (amazon.lambda.testtool-8.0) インストール
+make dev-localstack         # LocalStack起動
+make setup-db              # DynamoDBテーブル作成
+make lambda-deploy         # Lambda関数デプロイ
 ```
 
-2. クイックスタート（初回セットアップ + 開発環境起動）:
+### WSL環境での開発（Windows ユーザー推奨）
+
 ```bash
+# WSL用フルスタック環境起動
+
+# ターミナル1: バックエンド起動
+make fullstack-debug-wsl
+
+# ターミナル2: フロントエンド起動  
+make dev-frontend-wsl
+
+# Windows ブラウザからアクセス
+# フロントエンド: http://localhost:3000
+# バックエンドAPI: http://localhost:5073/swagger
+```
+
+### 従来環境での開発
+
+```bash
+# クイックスタート（全環境セットアップ + 起動）
 make quick-start
+
+# 個別セットアップ
+make setup                 # 依存関係インストール
+make docker-up            # Docker環境起動
+make setup-db             # DynamoDBテーブル作成
 ```
 
-3. 利用可能なコマンドを確認:
+## 🛠️ 開発コマンド
+
+### Lambda関連
+
 ```bash
-make help
+# Lambda関数をローカルでデバッグ
+make dev-lambda
+
+# Lambda Test Toolで起動
+make dev-lambda-test-tool
+
+# Lambda関数をビルド
+make build-lambda
+
+# LocalStackにデプロイ
+make lambda-deploy
+
+# Lambda関数一覧表示
+make lambda-list
 ```
 
-### Docker環境での構築
+### 開発サーバー
 
-1. 依存関係のインストール:
 ```bash
-make setup
+# 各種開発サーバー起動
+make dev-frontend         # Next.js開発サーバー
+make dev-frontend-debug   # Next.js開発サーバー（デバッグ用・環境変数修正済み）
+make dev-frontend-wsl     # Next.js開発サーバー（WSL用・Windows からアクセス可能）
+make dev-api             # ASP.NET Core API
+make dev-api-wsl         # ASP.NET Core API（WSL用・Windows からアクセス可能）
+make dev-lambda          # Lambda関数デバッグ
+make dev-mock            # APIモックサーバー
+make dev-localstack      # LocalStackのみ
+make fullstack-debug     # フルスタックデバッグ環境
+make fullstack-debug-wsl # フルスタックデバッグ環境（WSL用・Windows からアクセス可能）
 ```
 
-2. Docker Composeでサービスを起動:
+### テスト
+
 ```bash
-make dev-detached
+make test                # 全テスト実行
+make test-coverage       # カバレッジ付きテスト
+make test-domain         # ドメイン層テスト
+make test-application    # アプリケーション層テスト
+make test-infrastructure # インフラ層テスト
+make test-integration    # 統合テスト
+```
+
+### ビルド
+
+```bash
+make build               # 全プロジェクトビルド
+make build-frontend      # フロントエンドビルド
+make build-backend       # C# APIビルド
+make build-lambda        # Lambda関数ビルド
+```
+
+### データベース管理
+
+```bash
+make db-tables           # DynamoDBテーブル一覧
+make db-describe-games   # EsiritoriGameテーブル詳細
+```
+
+### ユーティリティ
+
+```bash
+make status              # プロジェクト状態確認
+make urls                # アクセス可能URL表示
+make clean               # 生成ファイルクリーンアップ
+```
+
+## 🌐 アクセス可能なURL
+
+| サービス | URL | 説明 |
+|---------|-----|------|
+| フロントエンド | http://localhost:3000 | Next.js開発サーバー |
+| API Mock | http://localhost:3001 | Node.js APIモック |
+| API (ASP.NET Core) | http://localhost:5073/swagger | Swagger UI |
+| Lambda Test Tool | http://localhost:5050 | Lambda関数テスト環境 |
+| LocalStack | http://localhost:4566 | AWS サービスモック |
+| DynamoDB Admin | http://localhost:8001 | DynamoDB管理UI |
+
+## 🏛️ Clean Architecture
+
+```
+backend/
+├── EsiritoriApi.Domain/          # ドメイン層 - ビジネスエンティティとルール
+├── EsiritoriApi.Application/     # アプリケーション層 - ユースケース
+├── EsiritoriApi.Infrastructure/  # インフラ層 - 外部システム接続
+├── EsiritoriApi.Api/            # プレゼンテーション層 - Web API
+└── Tests/                       # 各層ごとのテスト
+```
+
+### 特徴
+
+- **ドメイン駆動設計 (DDD)** による設計
+- **価値オブジェクト (Value Objects)** でドメインロジックをカプセル化
+- **依存性注入** による疎結合
+- **高いテストカバレッジ** (80%以上)
+
+## 🧪 テスト戦略
+
+### カバレッジ目標
+
+| 層 | 目標カバレッジ | 現在のカバレッジ |
+|----|--------------|-----------------|
+| ドメイン層 | 80%+ | 82.89% ✅ |
+| アプリケーション層 | 80%+ | 88.81% ✅ |
+| インフラ層 | 100% | 100% ✅ |
+| API層 | 50%+ | 53.94% ✅ |
+
+### テスト実行
+
+```bash
+# 全テスト実行
+make test
+
+# カバレッジ付きテスト
+make test-coverage
+
+# 層別テスト実行
+make test-domain
+make test-application
+make test-infrastructure
+make test-api
+make test-integration
+```
+
+## 🚀 Lambda関数の開発とデプロイ
+
+### ローカル開発
+
+```bash
+# 1. LocalStack環境準備
+make dev-localstack
+make setup-db
+
+# 2. Lambda関数開発
+make dev-lambda-test-tool    # Lambda Test Toolで開発
 # または
-make docker-up
+make dev-api                 # 通常のASP.NET Coreとして開発
 ```
 
-3. DynamoDBテーブルの作成を確認:
-```bash
-# テーブル作成の確認
-docker logs esiritori-dynamodb-init
-```
-
-### ローカル開発環境での構築
-
-#### フロントエンド
-
-1. フロントエンドディレクトリに移動:
-```bash
-cd frontend
-```
-
-2. 依存関係をインストール:
-```bash
-pnpm install
-```
-
-3. 開発サーバーを起動:
-```bash
-pnpm dev
-```
-
-#### APIモック
-
-1. APIディレクトリに移動:
-```bash
-cd frontend/mock
-```
-
-2. 依存関係をインストール:
-```bash
-npm install
-```
-
-3. 開発サーバーを起動:
-```bash
-npm run dev
-```
-
-#### C# API
-
-1. C# APIディレクトリに移動:
-```bash
-cd backend
-```
-
-2. 依存関係を復元:
-```bash
-dotnet restore
-```
-
-3. APIを起動:
-```bash
-dotnet run --project EsiritoriApi.Api
-```
-
-## 🚀 実行手順
-
-### Makefileを使用した実行（推奨）
+### LocalStackへのデプロイ
 
 ```bash
-# 開発環境全体を起動
-make dev
+# Lambda関数をビルド・デプロイ
+make lambda-deploy
 
-# バックグラウンドで起動
-make dev-detached
-
-# 個別サービスの起動
-make dev-frontend    # フロントエンドのみ
-make dev-api        # C# APIのみ  
-make dev-mock       # APIモックのみ
-make dev-storybook  # Storybookのみ
-
-# サービス停止
-make docker-down
-
-# URLを確認
-make urls
-
-# プロジェクト状態を確認
-make status
+# Function URLでAPIテスト
+curl <FUNCTION_URL>/api/games -H "Content-Type: application/json" \
+  -d '{"hostPlayerName": "Player1", "maxPlayers": 4}'
 ```
 
-### Docker環境での実行
+### デバッグ方法
 
-1. 全サービスを起動:
-```bash
-docker compose up
-```
+1. **標準ASP.NET Core**: `make dev-api` でSwagger UI使用
+2. **Lambda Test Tool**: `make dev-lambda-test-tool` でLambda環境シミュレート
+3. **IDE デバッグ**: Visual Studio/VSCodeでブレークポイント設定
 
-2. アクセス先:
-- **フロントエンド**: http://localhost:3000
-- **APIモック**: http://localhost:3001
-- **DynamoDB Local**: http://localhost:8000
-- **DynamoDB Admin UI**: http://localhost:8001
+### VS Code でのデバッグ
 
-3. サービス停止:
-```bash
-docker compose down
-```
+#### **WSL環境（推奨）:**
+1. **フルスタックデバッグ**: `Full Stack Debug (WSL)` 
+2. **フロントエンドのみ**: `Frontend: Next.js (WSL)`
+3. **バックエンドのみ**: `Backend: ASP.NET Core (WSL)`
 
-### ローカル環境での実行
+#### **標準環境:**
+1. **フルスタックデバッグ**: `Full Stack Debug (Standard)`
+2. **フロントエンドのみ**: `Frontend: Next.js (standard)`
+3. **バックエンドのみ**: `Backend: ASP.NET Core (standard)`
 
-各コンポーネントを個別に起動:
-
-1. **DynamoDB Local**:
-```bash
-docker run --rm -p 8000:8000 amazon/dynamodb-local:latest -jar DynamoDBLocal.jar -sharedDb -inMemory
-```
-
-**DynamoDB Admin UI** (オプション):
-```bash
-docker run --rm -p 8001:8001 -e DYNAMO_ENDPOINT=http://localhost:8000 aaronshaf/dynamodb-admin:latest
-```
-
-2. **フロントエンド**:
-```bash
-cd frontend && pnpm dev
-```
-
-3. **APIモック**:
-```bash
-cd frontend/mock && npm run dev
-```
-
-4. **C# API** (オプション):
-```bash
-cd backend && dotnet run --project EsiritoriApi.Api
-```
-
-## 🧪 テスト手順
-
-### Makefileを使用したテスト（推奨）
-
-```bash
-# 全チェック（リント + 型チェック + テスト）
-make full-test
-
-# 個別実行
-make test           # 全テスト実行
-make test-coverage  # カバレッジ付きテスト
-make lint          # リント実行
-make type-check    # TypeScript型チェック
-
-# C# API層別テスト
-make test-domain        # ドメイン層
-make test-application   # アプリケーション層
-make test-infrastructure # インフラ層
-make test-api          # API層
-make test-integration  # 統合テスト
-```
-
-### フロントエンドのテスト
-
-現在、フロントエンド専用のテストフレームワークは設定されていません。
-
-**型チェック**:
-```bash
-make type-check
-# または
-cd frontend && npx tsc --noEmit
-```
-
-**リント**:
-```bash
-make lint
-# または  
-cd frontend && pnpm lint
-```
-
-**Storybook**:
-```bash
-make dev-storybook
-# または
-cd frontend && pnpm storybook
-```
-
-### C# APIのテスト
-
-包括的なテストスイートが用意されています：
-
-1. **全テスト実行**:
-```bash
-cd backend
-dotnet test
-```
-
-2. **カバレッジ付きテスト実行**:
-```bash
-cd backend
-dotnet test --collect:"XPlat Code Coverage"
-```
-
-3. **特定のテストクラス実行**:
-```bash
-cd backend
-dotnet test --filter "ClassName=GameTests"
-```
-
-#### テスト構成
-
-**層別テストプロジェクト:**
-- **EsiritoriApi.Domain.Tests**: ドメインエンティティ、値オブジェクトのテスト (82.89%カバレッジ)
-- **EsiritoriApi.Application.Tests**: ユースケース、DTOのテスト (88.81%カバレッジ)
-- **EsiritoriApi.Infrastructure.Tests**: リポジトリ、データアクセスのテスト (100%カバレッジ)
-- **EsiritoriApi.Api.Tests**: コントローラー、HTTPエンドポイントのテスト (53.94%カバレッジ)
-- **EsiritoriApi.Integration.Tests**: エンドツーエンドの統合テスト
-
-**層別テスト実行:**
-```bash
-# 特定の層のテストを実行
-cd backend
-dotnet test EsiritoriApi.Domain.Tests/
-dotnet test EsiritoriApi.Application.Tests/
-dotnet test EsiritoriApi.Infrastructure.Tests/
-dotnet test EsiritoriApi.Api.Tests/
-dotnet test EsiritoriApi.Integration.Tests/
-```
-
-### APIモックのテスト
-
-APIモックには専用のテストは設定されていませんが、手動でエンドポイントをテストできます：
-
-```bash
-curl http://localhost:3001/api/games
-```
+**操作手順:**
+1. F5キーを押す
+2. デバッグ設定を選択
+3. Windows ブラウザから http://localhost:3000 でアクセス
 
 ## 📁 プロジェクト構造
 
 ```
 esiritori/
-├── Makefile               # 開発用コマンド定義
-├── backend/               # .NET 8.0 C# API
-│   ├── EsiritoriApi.Api/          # Web API層
-│   ├── EsiritoriApi.Application/  # アプリケーション層
-│   ├── EsiritoriApi.Domain/       # ドメイン層
+├── frontend/                    # Next.js フロントエンド
+│   ├── src/app/                # App Router
+│   ├── src/components/         # Reactコンポーネント
+│   └── mock/                   # APIモックサーバー
+├── backend/                    # .NET バックエンド
+│   ├── EsiritoriApi.Api/       # Web API層
+│   ├── EsiritoriApi.Application/ # アプリケーション層
+│   ├── EsiritoriApi.Domain/    # ドメイン層
 │   ├── EsiritoriApi.Infrastructure/ # インフラ層
-│   ├── EsiritoriApi.Domain.Tests/        # ドメイン層テスト
-│   ├── EsiritoriApi.Application.Tests/   # アプリケーション層テスト
-│   ├── EsiritoriApi.Infrastructure.Tests/ # インフラ層テスト
-│   ├── EsiritoriApi.Api.Tests/          # API層テスト
-│   └── EsiritoriApi.Integration.Tests/  # 統合テスト
-├── frontend/              # Next.js フロントエンド
-│   ├── src/               # フロントエンドソース
-│   │   ├── app/           # Next.js App Router
-│   │   ├── components/    # 再利用可能Reactコンポーネント + Storybook
-│   │   └── lib/           # ユーティリティ関数とAPIクライアント
-│   ├── mock/              # Node.js APIモック
-│   ├── .storybook/        # Storybook設定
-│   ├── package.json       # フロントエンド依存関係
-│   └── Dockerfile.dev     # フロントエンド開発用Dockerfile
-├── infrastructure/        # インフラ設定ファイル
-│   ├── api/               # API仕様
-│   │   └── openapi.yaml   # OpenAPI仕様書
-│   └── schemas/           # データベーススキーマ
-│       ├── create-tables.sh
-│       └── dynamodb-table-definitions.json
-├── scripts/               # 環境セットアップスクリプト
-│   └── create-dynamodb-table.sh
-├── design/                # 設計ドキュメント
-├── docs/                  # 開発ガイドライン
-│   └── Coderule.md        # コーディングルール
-├── docker-compose.yml     # Docker Compose設定
-├── test.runsettings       # .NETテスト設定
-├── CLAUDE.md              # AIアシスタント用プロジェクトガイド
-├── .gitignore             # Git除外設定
-└── .env.local             # 環境変数設定
+│   └── Tests/                  # テストプロジェクト
+├── infrastructure/             # インフラ設定
+├── scripts/                    # 自動化スクリプト
+├── design/                     # 設計ドキュメント
+└── docs/                       # 開発ガイドライン
 ```
 
-## 🔧 開発ガイド
+## 🔧 開発ワークフロー
 
-### 技術スタック
+### 新機能開発
 
-- **フロントエンド**: Next.js 15, React 19, TypeScript, Tailwind CSS, Storybook
-- **APIモック**: Node.js, Express, WebSocket
-- **C# API**: .NET 8.0, Clean Architecture, DDD
-- **テスト**: xUnit, Moq (C#)
-- **インフラ**: Docker, DynamoDB Local, DynamoDB Admin UI
+1. **設計**: `design/` ディレクトリで仕様確認
+2. **ドメイン実装**: ドメイン層からボトムアップで実装
+3. **テスト**: 各層のテストを先に作成（TDD）
+4. **統合**: API層まで実装
+5. **検証**: `make full-test` で全チェック
 
-### 開発フロー
+### Git ワークフロー
 
-1. 機能開発は主にC# APIで実装
-2. フロントエンドは設計に基づいて実装
-3. APIモックは開発初期のプロトタイピング用
-4. DynamoDB LocalでAWS DynamoDBをローカルでモック
-5. StorybookでUIコンポーネントの開発とテスト
-
-### インフラ構成
-
-プロジェクトには以下のインフラ関連ファイルが含まれています：
-
-- `infrastructure/schemas/` - DynamoDBテーブル定義と作成スクリプト
-- `scripts/` - 環境セットアップ用スクリプト
-
-#### DynamoDBセットアップ
-
-**手動でテーブル作成** (ローカル開発用):
 ```bash
-# DynamoDB Localが起動していることを確認
-chmod +x scripts/create-dynamodb-table.sh
-./scripts/create-dynamodb-table.sh
+# 開発ブランチ作成
+git checkout -b feature/new-feature
 
-# テーブル作成の確認
-aws dynamodb list-tables --endpoint-url http://localhost:8000 --region ap-northeast-1
+# 開発・テスト
+make full-test
+
+# コミット・プッシュ
+git commit -m "feat: 新機能実装"
+git push origin feature/new-feature
 ```
 
-**Docker環境** では`dynamodb-init`サービスが自動でテーブルを作成します。
-
-## 📚 関連ドキュメント
-
-- [設計ドキュメント](./design/) - システム設計とアーキテクチャ
-- [開発ガイドライン](./docs/Coderule.md) - コーディング規約とDDD実装ルール
-- [API仕様](./infrastructure/api/openapi.yaml) - REST API仕様
-- [CLAUDE.md](./CLAUDE.md) - AIアシスタント用プロジェクトガイド
-
-## 🐛 トラブルシューティング
+## 📋 トラブルシューティング
 
 ### よくある問題
 
-**Docker Composeが起動しない**:
-```bash
-# 状態確認
-make status
+1. **LocalStackが起動しない**
+   ```bash
+   docker compose down
+   docker compose up -d localstack
+   ```
 
-# ポート使用状況確認
-netstat -tulpn | grep -E ':(3000|3001|8000|8001)'
+2. **DynamoDBテーブルが見つからない**
+   ```bash
+   make setup-db
+   ```
 
-# Docker環境クリーンアップ
-make docker-clean
-```
+3. **Lambda関数のデプロイエラー**
+   ```bash
+   make clean
+   make build-lambda
+   make lambda-deploy
+   ```
 
-**pnpmコマンドが見つからない**:
-```bash
-npm install -g pnpm
-```
+4. **依存関係の問題**
+   ```bash
+   make clean
+   make setup
+   ```
 
-**.NET SDKが見つからない**:
-```bash
-# バージョン確認
-dotnet --version
+## 📚 詳細ドキュメント
 
-# インストール確認
-make status
-```
+- [コーディングルール](docs/Coderule.md)
+- [システム設計](design/)
+- [Claude向け開発ガイド](CLAUDE.md)
 
-**Makeコマンドが見つからない**:
-```bash
-# Ubuntu/Debian
-sudo apt-get install make
+## 🤝 貢献
 
-# macOS
-xcode-select --install
-```
+1. Issues で課題を報告
+2. Feature ブランチで開発
+3. Pull Request で提案
+4. レビュー後にマージ
 
-**DynamoDBに接続できない**:
-- DynamoDB Localコンテナが起動しているか確認 (`docker ps`)
-- ポート8000が使用されていないか確認
-- 環境変数`DYNAMODB_ENDPOINT`が正しく設定されているか確認
+## 📄 ライセンス
 
-**DynamoDB Admin UIにアクセスできない**:
-- DynamoDB Adminコンテナが起動しているか確認
-- ポート8001が使用されていないか確認
-- http://localhost:8001 でアクセスしてテーブルが表示されるか確認
-
-## 🔧 開発ツール
-
-### サービスURL (Docker環境)
-
-- **フロントエンド**: http://localhost:3000
-- **APIモック**: http://localhost:3001  
-- **DynamoDB Local**: http://localhost:8000
-- **DynamoDB Admin UI**: http://localhost:8001
-- **Storybook**: http://localhost:6006 (`pnpm storybook`実行時)
-
-### 環境変数設定
-
-プロジェクトルートと`frontend/`ディレクトリに`.env.local`ファイルがあります。環境に合わせて調整してください。
-
-## 📚 開発ガイドライン
-
-- [コーディングルール](docs/Coderule.md) - Value Objectの実装ルール、DDDパターンなど
+MIT License

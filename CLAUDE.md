@@ -61,16 +61,29 @@ dotnet test --filter "ClassName=GameTests"
 
 # Run tests by category
 dotnet test --filter "Category=ドメインモデル"
+
+# Debug Lambda function locally
+./scripts/debug-lambda-local.sh
+
+# Install Lambda Test Tool manually
+dotnet tool install -g amazon.lambda.testtool-8.0
 ```
 
-### DynamoDB Setup (LocalStack)
+### LocalStack Setup (DynamoDB + Lambda)
 ```bash
 # Create DynamoDB table in LocalStack
 chmod +x scripts/create-dynamodb-table.sh
 ./scripts/create-dynamodb-table.sh
 
-# Verify table creation
+# Build and deploy Lambda function to LocalStack
+chmod +x scripts/build-lambda.sh
+chmod +x scripts/deploy-lambda-localstack.sh
+./scripts/build-lambda.sh
+./scripts/deploy-lambda-localstack.sh
+
+# Verify services
 aws dynamodb list-tables --endpoint-url http://localhost:4566 --region ap-northeast-1
+aws lambda list-functions --endpoint-url http://localhost:4566 --region ap-northeast-1
 ```
 
 ### API Mock (Node.js)
@@ -97,8 +110,9 @@ docker compose down
 **Included Services:**
 - **Frontend**: Next.js development server (port 3000)
 - **API Mock**: Node.js mock server (port 3001)  
-- **LocalStack**: AWS services mock including DynamoDB (port 4566)
+- **LocalStack**: AWS services mock including DynamoDB and Lambda (port 4566)
 - **DynamoDB Admin UI**: Web interface for DynamoDB management (port 8001)
+- **Lambda Function**: C# API running as AWS Lambda function (accessible via LocalStack)
 
 **DynamoDB Management:**
 - Access DynamoDB Admin UI at http://localhost:8001
@@ -220,6 +234,7 @@ Key directories:
 - API Mock: http://localhost:3001  
 - LocalStack: http://localhost:4566
 - DynamoDB Admin UI: http://localhost:8001
+- Lambda Function: Available via LocalStack Function URL (check deploy script output)
 
 ## Key Implementation Guidelines
 

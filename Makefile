@@ -24,11 +24,16 @@ setup: ## 初回セットアップ（依存関係のインストール）
 	cd backend && dotnet restore
 	@echo "✅ セットアップ完了"
 
-setup-db: ## DynamoDBテーブルの作成（ローカル用）
+setup-db: ## DynamoDBテーブルの作成（LocalStack用）
 	@echo "🗄️ DynamoDBテーブルを作成しています..."
 	chmod +x scripts/create-dynamodb-table.sh
 	./scripts/create-dynamodb-table.sh
 	@echo "✅ DynamoDBテーブル作成完了"
+
+setup-lambda: ## Lambda関数の準備（Test Tool等）
+	@echo "🔧 Lambda Test Toolをインストールしています..."
+	dotnet tool install -g amazon.lambda.testtool-8.0 || echo "Lambda Test Tool既にインストール済み"
+	@echo "✅ Lambda環境準備完了"
 
 # =======================================
 # 開発サーバー起動
@@ -46,9 +51,31 @@ dev-frontend: ## フロントエンド開発サーバーのみ起動
 	@echo "🌐 フロントエンド開発サーバーを起動しています..."
 	cd frontend && pnpm dev
 
-dev-api: ## C# API開発サーバーのみ起動
+dev-frontend-debug: ## フロントエンド開発サーバーをデバッグモードで起動
+	@echo "🌐 フロントエンド開発サーバーをデバッグモードで起動しています..."
+	./scripts/debug-frontend.sh
+
+dev-frontend-wsl: ## フロントエンド開発サーバーをWSL用で起動（Windows からアクセス可能）
+	@echo "🌐 フロントエンド開発サーバーをWSL用で起動しています..."
+	@echo "Windows ブラウザからアクセス: http://localhost:3000"
+	cd frontend && pnpm run dev-wsl
+
+dev-api: ## C# API開発サーバーのみ起動（通常のASP.NET Core）
 	@echo "⚙️ C# API開発サーバーを起動しています..."
 	cd backend && dotnet run --project EsiritoriApi.Api
+
+dev-api-wsl: ## C# API開発サーバーをWSL用で起動（Windows からアクセス可能）
+	@echo "⚙️ C# API開発サーバーをWSL用で起動しています..."
+	@echo "Windows ブラウザからアクセス: http://localhost:5073/swagger"
+	cd backend && dotnet run --project EsiritoriApi.Api --launch-profile http-wsl
+
+dev-lambda: ## Lambda関数をローカルでデバッグ実行
+	@echo "🔗 Lambda関数デバッグ環境を起動しています..."
+	./scripts/debug-lambda-local.sh
+
+dev-lambda-test-tool: ## Lambda Test Toolで起動
+	@echo "🔧 Lambda Test Toolを起動しています..."
+	cd backend/EsiritoriApi.Api && dotnet lambda-test-tool-8.0
 
 dev-mock: ## APIモック開発サーバーのみ起動
 	@echo "🔧 APIモック開発サーバーを起動しています..."
@@ -58,13 +85,13 @@ dev-storybook: ## Storybookを起動
 	@echo "📚 Storybookを起動しています..."
 	cd frontend && pnpm storybook
 
-dev-dynamodb: ## DynamoDB Localのみ起動
-	@echo "🗄️ DynamoDB Localを起動しています..."
-	docker run --rm -p 8000:8000 amazon/dynamodb-local:latest -jar DynamoDBLocal.jar -sharedDb -inMemory
+dev-localstack: ## LocalStackのみ起動（DynamoDB + Lambda）
+	@echo "☁️ LocalStackを起動しています..."
+	docker compose up -d localstack
 
-dev-dynamodb-admin: ## DynamoDB Admin UIを起動（DynamoDB Local必須）
+dev-dynamodb-admin: ## DynamoDB Admin UIを起動（LocalStack必須）
 	@echo "🔍 DynamoDB Admin UIを起動しています..."
-	docker run --rm -p 8001:8001 -e DYNAMO_ENDPOINT=http://host.docker.internal:8000 aaronshaf/dynamodb-admin:latest
+	docker compose up -d dynamodb-admin
 
 # =======================================
 # ビルド関連
@@ -87,6 +114,12 @@ build-backend: ## C# APIのみビルド
 build-storybook: ## Storybookをビルド
 	@echo "🔨 Storybookをビルドしています..."
 	cd frontend && pnpm build-storybook
+
+build-lambda: ## Lambda関数をビルド
+	@echo "🔨 Lambda関数をビルドしています..."
+	chmod +x scripts/build-lambda.sh
+	./scripts/build-lambda.sh
+	@echo "✅ Lambda関数ビルド完了"
 
 # =======================================
 # テスト関連
@@ -163,13 +196,31 @@ docker-clean: ## Docker環境をクリーンアップ
 # データベース関連
 # =======================================
 
-db-tables: ## DynamoDBテーブル一覧を表示
+db-tables: ## DynamoDBテーブル一覧を表示（LocalStack）
 	@echo "📋 DynamoDBテーブル一覧:"
-	aws dynamodb list-tables --endpoint-url http://localhost:8000 --region ap-northeast-1
+	aws dynamodb list-tables --endpoint-url http://localhost:4566 --region ap-northeast-1
 
-db-describe-games: ## Gamesテーブルの構造を表示
-	@echo "📋 Gamesテーブルの構造:"
-	aws dynamodb describe-table --table-name Games --endpoint-url http://localhost:8000 --region ap-northeast-1
+db-describe-games: ## EsiritoriGameテーブルの構造を表示
+	@echo "📋 EsiritoriGameテーブルの構造:"
+	aws dynamodb describe-table --table-name EsiritoriGame --endpoint-url http://localhost:4566 --region ap-northeast-1
+
+# =======================================
+# Lambda関連
+# =======================================
+
+lambda-deploy: build-lambda ## Lambda関数をLocalStackにデプロイ
+	@echo "🚀 Lambda関数をLocalStackにデプロイしています..."
+	chmod +x scripts/deploy-lambda-localstack.sh
+	./scripts/deploy-lambda-localstack.sh
+	@echo "✅ Lambda関数デプロイ完了"
+
+lambda-list: ## LocalStackのLambda関数一覧を表示
+	@echo "📋 Lambda関数一覧:"
+	aws lambda list-functions --endpoint-url http://localhost:4566 --region ap-northeast-1
+
+lambda-logs: ## Lambda関数のログを表示
+	@echo "📋 Lambda関数のログ:"
+	aws logs describe-log-groups --endpoint-url http://localhost:4566 --region ap-northeast-1
 
 # =======================================
 # ユーティリティ
@@ -181,6 +232,8 @@ clean: ## 生成ファイルをクリーンアップ
 	rm -rf frontend/storybook-static
 	rm -rf backend/*/bin
 	rm -rf backend/*/obj
+	rm -rf backend/lambda-package
+	rm -rf backend/esiritori-api-lambda.zip
 	rm -rf TestResults/
 	@echo "✅ クリーンアップ完了"
 
@@ -203,7 +256,9 @@ urls: ## アクセス可能なURLを表示
 	@echo "🌐 アクセス可能なURL:"
 	@echo "Frontend:           http://localhost:3000"
 	@echo "API Mock:           http://localhost:3001"
-	@echo "DynamoDB Local:     http://localhost:8000"
+	@echo "API (ASP.NET Core): http://localhost:5073/swagger"
+	@echo "Lambda Test Tool:   http://localhost:5050"
+	@echo "LocalStack:         http://localhost:4566"
 	@echo "DynamoDB Admin UI:  http://localhost:8001"
 	@echo "Storybook:          http://localhost:6006 (make dev-storybook実行時)"
 
@@ -211,10 +266,39 @@ urls: ## アクセス可能なURLを表示
 # 開発ワークフロー
 # =======================================
 
-quick-start: setup docker-up ## クイックスタート（初回セットアップ + 開発環境起動）
+quick-start: setup setup-lambda docker-up ## クイックスタート（初回セットアップ + 開発環境起動）
 	@echo "🎉 開発環境が起動しました！"
 	@echo ""
 	@$(MAKE) urls
+
+lambda-quick-start: setup-lambda dev-localstack setup-db lambda-deploy ## Lambda環境のクイックスタート
+	@echo "🎉 Lambda開発環境が起動しました！"
+	@echo ""
+	@echo "✅ Lambda関数がLocalStackにデプロイされました"
+	@echo "🔧 Lambda Test Toolでローカルデバッグも可能です: make dev-lambda-test-tool"
+
+fullstack-debug: ## フルスタックデバッグ環境を起動（バックエンド + フロントエンド）
+	@echo "🚀 フルスタックデバッグ環境を起動しています..."
+	@echo "バックエンド: ASP.NET Core (http://localhost:5073)"
+	@echo "フロントエンド: Next.js (http://localhost:3000)"
+	@echo ""
+	@echo "🔧 バックエンドを起動します..."
+	@echo "別ターミナルでフロントエンドを起動してください:"
+	@echo "  make dev-frontend-debug"
+	@echo ""
+	cd backend && dotnet run --project EsiritoriApi.Api --urls "http://0.0.0.0:5073"
+
+fullstack-debug-wsl: ## フルスタックデバッグ環境をWSL用で起動（Windows からアクセス可能）
+	@echo "🚀 WSL用フルスタックデバッグ環境を起動しています..."
+	@echo "バックエンド: ASP.NET Core (http://localhost:5073)"
+	@echo "フロントエンド: Next.js (http://localhost:3000)"
+	@echo ""
+	@echo "🔧 バックエンドを起動します..."
+	@echo "別ターミナルでフロントエンドを起動してください:"
+	@echo "  make dev-frontend-wsl"
+	@echo ""
+	@echo "Windowsのブラウザからアクセスできるようになりました！"
+	cd backend && dotnet run --project EsiritoriApi.Api --launch-profile http-wsl
 
 full-test: lint type-check test ## 全チェック（リント + 型チェック + テスト）
 	@echo "✅ 全チェック完了"

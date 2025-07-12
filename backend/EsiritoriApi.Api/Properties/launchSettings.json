@@ -16,7 +16,21 @@
       "launchUrl": "swagger",
       "applicationUrl": "http://localhost:5073",
       "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Development"
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "DynamoDB:ServiceURL": "http://localhost:4566",
+        "AWS:Region": "ap-northeast-1"
+      }
+    },
+    "http-wsl": {
+      "commandName": "Project",
+      "dotnetRunMessages": true,
+      "launchBrowser": false,
+      "launchUrl": "swagger",
+      "applicationUrl": "http://0.0.0.0:5073",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "DynamoDB:ServiceURL": "http://localhost:4566",
+        "AWS:Region": "ap-northeast-1"
       }
     },
     "https": {
@@ -26,7 +40,9 @@
       "launchUrl": "swagger",
       "applicationUrl": "https://localhost:7198;http://localhost:5073",
       "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Development"
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "DynamoDB:ServiceURL": "http://localhost:4566",
+        "AWS:Region": "ap-northeast-1"
       }
     },
     "IIS Express": {
@@ -36,6 +52,19 @@
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
       }
+    },
+    "Lambda Test Tool": {
+      "commandName": "Executable",
+      "commandLineArgs": "--port 5050",
+      "workingDirectory": ".\\bin\\$(Configuration)\\net8.0",
+      "executablePath": "%USERPROFILE%\\.dotnet\\tools\\dotnet-lambda-test-tool-8.0.exe",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "DynamoDB:ServiceURL": "http://localhost:4566",
+        "AWS:Region": "ap-northeast-1"
+      },
+      "launchBrowser": true,
+      "launchUrl": "http://localhost:5050"
     }
   }
 }
