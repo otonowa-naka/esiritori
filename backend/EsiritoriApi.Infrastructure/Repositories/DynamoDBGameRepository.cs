@@ -27,24 +27,7 @@ public sealed class DynamoDBGameRepository : IGameRepository
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
         var tableName = configuration["DynamoDB:TableName"] ?? "EsiritoriGame";
-        
-        _logger.LogInformation("DynamoDBGameRepositoryのテーブル初期化開始: TableName={TableName}", tableName);
-        
-        try
-        {
-            // テーブル接続の詳細ログ
-            var config = dynamoDBClient.Config;
-            _logger.LogInformation("DynamoDB接続設定詳細: ServiceURL={ServiceURL}, RegionEndpoint={RegionEndpoint}, UseHttp={UseHttp}", 
-                config.ServiceURL, config.RegionEndpoint?.DisplayName, config.UseHttp);
-            
-            _table = Table.LoadTable(dynamoDBClient, tableName);
-            _logger.LogInformation("DynamoDBテーブルのロードが成功しました: {TableName}", tableName);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "DynamoDBテーブルのロードに失敗しました: TableName={TableName}", tableName);
-            throw;
-        }
+        _table = Table.LoadTable(dynamoDBClient, tableName);
     }
 
     /// <summary>
