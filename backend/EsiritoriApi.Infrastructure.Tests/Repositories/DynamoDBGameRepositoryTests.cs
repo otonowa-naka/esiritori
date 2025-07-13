@@ -19,7 +19,7 @@ public sealed class DynamoDBGameRepositoryTests : IAsyncLifetime
     private IAmazonDynamoDB _dynamoDBClient = null!;
     private DynamoDBGameRepository _repository = null!;
     private const string TableName = "EsiritoriGame";
-    private const string LocalStackEndpoint = "http://localhost:8000";
+    private static readonly string LocalStackEndpoint = Environment.GetEnvironmentVariable("AWS_ENDPOINT_URL") ?? "http://localhost:8000";
     private readonly List<GameId> _createdGameIds = new();
 
     public DynamoDBGameRepositoryTests()

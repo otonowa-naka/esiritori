@@ -24,51 +24,35 @@ jobs:
     - name: Build
       run: dotnet build backend/EsiritoriApi.sln --no-restore
     
-    - name: Start LocalStack
+    - name: Start DynamoDB Local with docker-compose
       run: |
-        docker run -d --name localstack \
-          -p 4566:4566 \
-          -e SERVICES=dynamodb \
-          -e DEBUG=0 \
-          -e PERSISTENCE=0 \
-          -e EAGER_SERVICE_LOADING=1 \
-          -e SKIP_INFRA_DOWNLOADS=1 \
-          -e TMPDIR=/opt/code/localstack/tmp \
-          localstack/localstack:3.0
+        docker-compose up -d dynamodb-local dynamodb-init
     
-    - name: Wait for LocalStack to be ready
+    - name: Wait for DynamoDB Local to be ready
       run: |
-        echo "Waiting for LocalStack to start..."
-        for i in {1..30}; do
-          if curl -f http://localhost:4566/_localstack/health >/dev/null 2>&1; then
-            echo "LocalStack is ready"
-            curl -s http://localhost:4566/_localstack/health | jq .
-            break
-          fi
-          echo "Waiting for LocalStack... (attempt $i/30)"
-          sleep 2
-        done
-        
-        # Check if LocalStack is actually ready
-        if ! curl -f http://localhost:4566/_localstack/health >/dev/null 2>&1; then
-          echo "LocalStack failed to start properly"
-          docker logs localstack
-          exit 1
-        fi
-    
-    - name: Setup AWS CLI
-      run: |
+        echo "Waiting for DynamoDB Local to start..."
         pip install awscli
         aws configure set aws_access_key_id test
         aws configure set aws_secret_access_key test
         aws configure set region ap-northeast-1
-    
-    - name: Create DynamoDB table
-      run: |
-        chmod +x scripts/create-dynamodb-table.sh
-        ./scripts/create-dynamodb-table.sh
-      env:
-        AWS_ENDPOINT_URL: http://localhost:4566
+        
+        for i in {1..30}; do
+          if aws dynamodb list-tables --endpoint-url http://localhost:8000 --region ap-northeast-1 >/dev/null 2>&1; then
+            echo "DynamoDB Local is ready"
+            aws dynamodb list-tables --endpoint-url http://localhost:8000 --region ap-northeast-1
+            break
+          fi
+          echo "Waiting for DynamoDB Local... (attempt $i/30)"
+          sleep 2
+        done
+        
+        # Check if DynamoDB Local is actually ready
+        if ! aws dynamodb list-tables --endpoint-url http://localhost:8000 --region ap-northeast-1 >/dev/null 2>&1; then
+          echo "DynamoDB Local failed to start properly"
+          docker-compose logs dynamodb-local
+          docker-compose logs dynamodb-init
+          exit 1
+        fi
     
     - name: Run Unit Tests
       run: |
@@ -77,7 +61,7 @@ jobs:
         dotnet test backend/EsiritoriApi.Infrastructure.Tests/ --no-build --verbosity normal --collect:"XPlat Code Coverage"
         dotnet test backend/EsiritoriApi.Api.Tests/ --no-build --verbosity normal --collect:"XPlat Code Coverage"
       env:
-        AWS_ENDPOINT_URL: http://localhost:4566
+        AWS_ENDPOINT_URL: http://localhost:8000
         AWS_ACCESS_KEY_ID: test
         AWS_SECRET_ACCESS_KEY: test
         AWS_DEFAULT_REGION: ap-northeast-1
@@ -85,7 +69,7 @@ jobs:
     - name: Run Integration Tests
       run: dotnet test backend/EsiritoriApi.Integration.Tests/ --no-build --verbosity normal --collect:"XPlat Code Coverage"
       env:
-        AWS_ENDPOINT_URL: http://localhost:4566
+        AWS_ENDPOINT_URL: http://localhost:8000
         AWS_ACCESS_KEY_ID: test
         AWS_SECRET_ACCESS_KEY: test
         AWS_DEFAULT_REGION: ap-northeast-1
@@ -97,6 +81,10 @@ jobs:
         flags: backend
         name: backend-coverage
         fail_ci_if_error: false
+    
+    - name: Cleanup docker-compose services
+      if: always()
+      run: docker-compose down
 
   frontend-tests:
     runs-on: ubuntu-latest
