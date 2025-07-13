@@ -84,7 +84,7 @@ jobs:
     
     - name: Cleanup docker-compose services
       if: always()
-      run: docker-compose down
+      run: docker compose down
 
   frontend-tests:
     runs-on: ubuntu-latest
